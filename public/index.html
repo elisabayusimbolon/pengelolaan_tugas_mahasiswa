@@ -3,51 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Task Manager</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>Sistem Akademik Mahasiswa</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; max-width: 800px; margin: 0 auto; padding: 20px; }
+        
+        /* Kartu Profil User */
+        .user-card { background: linear-gradient(135deg, #007bff, #0056b3); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .user-info h2 { margin: 0; font-size: 1.5em; }
+        .user-info p { margin: 5px 0 0; opacity: 0.9; }
+
+        .container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box; }
+        
+        button.btn-save { background: #28a745; color: white; border: none; font-weight: bold; cursor: pointer; }
+        button.btn-cancel { background: #6c757d; color: white; border: none; display: none; margin-top: 0;}
+        button.btn-delete { background: #dc3545; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; float: right;}
+        button.btn-edit { background: #ffc107; color: #333; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; float: right; margin-right: 5px;}
+
+        ul { list-style: none; padding: 0; }
+        .task-item { background: #fff; border-bottom: 1px solid #eee; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .task-details h3 { margin: 0 0 5px; color: #333; }
+        .task-meta { font-size: 0.85em; color: #666; }
+        .badge { padding: 3px 8px; border-radius: 10px; font-size: 0.75em; color: white; }
+        .badge-Tinggi { background: #dc3545; }
+        .badge-Sedang { background: #ffc107; color: #333; }
+        .badge-Rendah { background: #28a745; }
+
+        .actions { min-width: 120px; }
+    </style>
 </head>
 <body>
 
+    <div class="user-card" id="userArea">
+        <div class="user-info">
+            <h2 id="userName">Memuat Data Mahasiswa...</h2>
+            <p id="userNim">NIM: - | Jurusan: -</p>
+        </div>
+        <div style="font-size: 2em;">🎓</div>
+    </div>
+
     <div class="container">
-        <header>
-            <h1>🎓 Student Task Manager</h1>
-            <p>Kelola tugas kuliahmu dengan mudah.</p>
-        </header>
+        <h3 id="formTitle">Tambah Tugas Baru</h3>
+        <form id="taskForm">
+            <input type="hidden" id="taskId"> <input type="text" id="judul" placeholder="Judul Tugas (Contoh: Laporan Lab)" required>
+            
+            <select id="matkulSelect" required>
+                <option value="">-- Pilih Mata Kuliah --</option>
+            </select>
 
-        <section class="card">
-            <h2>Tambah Tugas Baru</h2>
-            <form id="taskForm">
-                <div class="form-group">
-                    <label>Judul Tugas</label>
-                    <input type="text" id="judul" placeholder="Contoh: Makalah Pancasila" required>
-                </div>
-                
-                <div class="row">
-                    <div class="form-group">
-                        <label>Prioritas</label>
-                        <select id="prioritas">
-                            <option value="Rendah">Rendah</option>
-                            <option value="Sedang" selected>Sedang</option>
-                            <option value="Tinggi">Tinggi 🔥</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Deadline</label>
-                        <input type="date" id="deadline" required>
-                    </div>
-                </div>
+            <div style="display: flex; gap: 10px;">
+                <select id="prioritas">
+                    <option value="Rendah">Low Priority</option>
+                    <option value="Sedang" selected>Medium Priority</option>
+                    <option value="Tinggi">High Priority</option>
+                </select>
+                <input type="date" id="deadline" required>
+            </div>
 
-                <button type="submit" class="btn-primary">Simpan Tugas</button>
-            </form>
-        </section>
+            <button type="submit" class="btn-save" id="btnSubmit">Simpan Tugas</button>
+            <button type="button" class="btn-cancel" id="btnCancel" onclick="resetForm()">Batal Edit</button>
+        </form>
+    </div>
 
-        <section class="card">
-            <h2>Daftar Tugas Anda</h2>
-            <div id="loading" style="display:none;">Sedang memuat data...</div>
-            <ul id="taskList" class="task-list">
-                </ul>
-        </section>
+    <div class="container" style="margin-top: 20px;">
+        <h3>Daftar Tugas Akademik</h3>
+        <p id="loading">Sedang memuat data...</p>
+        <ul id="taskList"></ul>
     </div>
 
     <script src="script.js"></script>

@@ -1,193 +1,210 @@
 const API_URL = '/api';
 
-// Variabel global
+// Variabel Global untuk menyimpan State
 let currentUserId = null;
+let isEditing = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
-    await initDummyData(); // Cek user dulu
-    loadTasks(); // Baru ambil tugas
+    await initSystem(); // Cek User & Matkul dulu
+    loadTasks();        // Baru load tugas
 });
 
-// 1. FUNGSI INISIALISASI (Cek User Saja)
-// Saya menghapus bagian "Courses/Matkul" karena di backend api/index.js sebelumnya
-// kita belum membuat route untuk Courses. Jika dipaksakan, akan error 404.
-async function initDummyData() {
+// 1. INISIALISASI SISTEM (Auto-Seed Data)
+async function initSystem() {
     try {
-        // Cek apakah ada user di database
+        // A. Cek User
         let resUser = await fetch(`${API_URL}/users`);
-        
-        // Handle jika backend belum siap/error
-        if (!resUser.ok) throw new Error("Gagal mengambil data user");
-        
         let users = await resUser.json();
-        
+
         if (users.length === 0) {
-            // Jika kosong, buat User Dummy baru
-            console.log("User kosong, membuat user baru...");
-            const newUser = await fetch(`${API_URL}/users`, { // Pastikan ada route POST /api/users di backend jika ingin fitur ini jalan
+            // Jika kosong, buat User Mahasiswa Dummy
+            const newUser = await fetch(`${API_URL}/users`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    username: "Mahasiswa Demo" // Sesuaikan dengan Schema Backend (username)
+                    nama_lengkap: "Mahasiswa Teladan", 
+                    nim: "12345678", 
+                    jurusan: "Teknik Informatika", 
+                    semester: 3 
                 })
             });
-            
-            // Fallback jika route POST user belum dibuat di backend
-            if(newUser.ok) {
-                const createdUser = await newUser.json();
-                currentUserId = createdUser._id;
-            } else {
-                console.warn("Backend tidak support buat user otomatis. Menggunakan ID dummy lokal.");
-                currentUserId = "user_demo_123"; 
-            }
+            const created = await newUser.json();
+            currentUserId = created._id;
+            users = [created];
         } else {
-            currentUserId = users[0]._id; // Pakai user pertama yg ketemu
+            currentUserId = users[0]._id;
         }
 
-        console.log("=> Login sebagai User ID:", currentUserId);
+        // Tampilkan Data User di UI
+        const activeUser = users[0];
+        document.getElementById('userName').innerText = activeUser.nama_lengkap;
+        document.getElementById('userNim').innerText = `NIM: ${activeUser.nim} | ${activeUser.jurusan}`;
+
+        // B. Cek & Isi Dropdown Mata Kuliah
+        let resCourse = await fetch(`${API_URL}/courses`);
+        let courses = await resCourse.json();
+
+        if (courses.length === 0) {
+            // Buat 3 Matkul Dummy Otomatis
+            const dummyCourses = [
+                { kode_mata_kuliah: "IF101", nama_mata_kuliah: "Pemrograman Web", semester: 3 },
+                { kode_mata_kuliah: "IF102", nama_mata_kuliah: "Basis Data", semester: 3 },
+                { kode_mata_kuliah: "IF103", nama_mata_kuliah: "Algoritma", semester: 1 }
+            ];
+
+            for (let c of dummyCourses) {
+                await fetch(`${API_URL}/courses`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(c)
+                });
+            }
+            // Fetch ulang setelah buat baru
+            resCourse = await fetch(`${API_URL}/courses`);
+            courses = await resCourse.json();
+        }
+
+        // Masukkan ke Dropdown HTML
+        const select = document.getElementById('matkulSelect');
+        courses.forEach(c => {
+            const option = document.createElement('option');
+            option.value = c._id; // Value-nya adalah ID Matkul (Relasi)
+            option.text = `${c.kode_mata_kuliah} - ${c.nama_mata_kuliah}`;
+            select.appendChild(option);
+        });
 
     } catch (error) {
-        console.error("Gagal init user:", error);
-        // Fallback agar aplikasi tetap jalan meski gagal fetch user
-        currentUserId = "user_fallback_id";
+        console.error("Gagal init sistem:", error);
     }
 }
 
 // 2. LOAD TASKS (READ)
 async function loadTasks() {
     const list = document.getElementById('taskList');
-    const loading = document.getElementById('loading'); // Pastikan ada elemen id="loading" di HTML
-    
-    if(loading) loading.style.display = 'block';
+    document.getElementById('loading').style.display = 'block';
     list.innerHTML = '';
 
     try {
         const res = await fetch(`${API_URL}/tasks`);
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        
         const tasks = await res.json();
-        
-        // Jika data kosong
-        if (tasks.length === 0) {
-            list.innerHTML = '<p style="text-align:center; color:gray;">Belum ada tugas.</p>';
-            return;
-        }
 
         tasks.forEach(task => {
             const item = document.createElement('li');
             item.className = 'task-item';
             
-            // Format Tanggal (Handle jika deadline kosong)
-            const dateStr = task.deadline ? new Date(task.deadline).toLocaleDateString('id-ID', {
-                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-            }) : '-';
-            
-            // Menyesuaikan warna badge berdasarkan prioritas
-            let badgeColor = 'secondary';
-            if(task.priority === 'Tinggi') badgeColor = 'danger';
-            if(task.priority === 'Sedang') badgeColor = 'warning';
-            if(task.priority === 'Rendah') badgeColor = 'success';
+            // Handle tanggal & null check
+            const date = task.tenggat_waktu ? new Date(task.tenggat_waktu).toLocaleDateString('id-ID') : '-';
+            const matkulName = task.id_mata_kuliah ? task.id_mata_kuliah.nama_mata_kuliah : 'Umum';
 
-            // PERHATIKAN: Menggunakan properti bahasa Inggris (title, priority, deadline)
-            // Sesuai dengan backend api/index.js
             item.innerHTML = `
-                <div class="task-info">
-                    <h3>${task.title || '(Tanpa Judul)'} 
-                        <span class="badge bg-${badgeColor}">${task.priority || 'Normal'}</span>
-                    </h3>
+                <div class="task-details">
+                    <h3>${task.judul_tugas} <span class="badge badge-${task.prioritas}">${task.prioritas}</span></h3>
                     <div class="task-meta">
-                        📅 Deadline: ${dateStr}
+                        📚 ${matkulName} | 📅 Deadline: ${date}
                     </div>
                 </div>
-                <button onclick="deleteTask('${task._id}')" class="btn-delete" style="background-color: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Hapus</button>
+                <div class="actions">
+                    <button onclick="deleteTask('${task._id}')" class="btn-delete">Hapus</button>
+                    <button onclick="prepareEdit('${task._id}', '${task.judul_tugas}', '${task.id_mata_kuliah?._id}', '${task.prioritas}', '${task.tenggat_waktu}')" class="btn-edit">Edit</button>
+                </div>
             `;
             list.appendChild(item);
         });
     } catch (error) {
-        console.error('Error loading tasks:', error);
-        list.innerHTML = `<p style="color:red; text-align:center;">Gagal memuat tugas. <br> <small>${error.message}</small></p>`;
+        console.error(error);
     } finally {
-        if(loading) loading.style.display = 'none';
+        document.getElementById('loading').style.display = 'none';
     }
 }
 
-// 3. TAMBAH TUGAS (CREATE)
-const taskForm = document.getElementById('taskForm');
-if (taskForm) {
-    taskForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const judul = document.getElementById('judul').value;
-        const prioritas = document.getElementById('prioritas').value;
-        const deadline = document.getElementById('deadline').value;
-        const btnSubmit = taskForm.querySelector('button[type="submit"]');
+// 3. HANDLE SUBMIT (CREATE & UPDATE)
+document.getElementById('taskForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const id = document.getElementById('taskId').value;
+    const judul = document.getElementById('judul').value;
+    const matkul = document.getElementById('matkulSelect').value;
+    const prioritas = document.getElementById('prioritas').value;
+    const deadline = document.getElementById('deadline').value;
 
-        // Validasi sederhana
-        if(!judul) {
-            alert("Judul tugas wajib diisi!");
-            return;
+    const payload = {
+        id_pengguna: currentUserId,
+        id_mata_kuliah: matkul,
+        judul_tugas: judul,
+        prioritas: prioritas,
+        tenggat_waktu: deadline
+    };
+
+    try {
+        let url = `${API_URL}/tasks`;
+        let method = 'POST';
+
+        // Jika sedang Edit, ubah URL dan Method
+        if (isEditing) {
+            url = `${API_URL}/tasks/${id}`;
+            method = 'PUT'; // Method Update
         }
 
-        // Ubah tombol jadi loading
-        const originalText = btnSubmit.innerText;
-        btnSubmit.innerText = "Menyimpan...";
-        btnSubmit.disabled = true;
+        await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
 
-        // PERHATIKAN: Key objek harus bahasa INGGRIS (title, priority, deadline)
-        // Agar cocok dengan Mongoose Schema di backend
-        const data = {
-            title: judul,          // Frontend: judul -> Backend: title
-            priority: prioritas,   // Frontend: prioritas -> Backend: priority
-            deadline: deadline,    // Frontend: deadline -> Backend: deadline
-            userId: currentUserId  // ID User
-        };
+        resetForm(); // Bersihkan form
+        loadTasks(); // Reload data
+    } catch (error) {
+        alert("Gagal menyimpan data");
+    }
+});
 
-        try {
-            const res = await fetch(`${API_URL}/tasks`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
+// 4. PREPARE EDIT (Mengisi Form dengan Data Lama)
+window.prepareEdit = function(id, judul, idMatkul, prioritas, deadline) {
+    isEditing = true;
+    
+    // Ubah Tampilan Form
+    document.getElementById('formTitle').innerText = "Edit Tugas";
+    document.getElementById('btnSubmit').innerText = "Update Data";
+    document.getElementById('btnSubmit').style.backgroundColor = "#ffc107"; // Kuning
+    document.getElementById('btnSubmit').style.color = "#333";
+    document.getElementById('btnCancel').style.display = "inline-block";
 
-            if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.error || "Gagal menyimpan");
-            }
-
-            // Reset Form & Reload
-            taskForm.reset();
-            loadTasks(); 
-
-        } catch (error) {
-            console.error("Gagal submit:", error);
-            alert("Terjadi kesalahan: " + error.message);
-        } finally {
-            // Kembalikan tombol
-            btnSubmit.innerText = originalText;
-            btnSubmit.disabled = false;
-        }
-    });
+    // Isi Input
+    document.getElementById('taskId').value = id;
+    document.getElementById('judul').value = judul;
+    document.getElementById('matkulSelect').value = idMatkul || "";
+    document.getElementById('prioritas').value = prioritas;
+    
+    // Format tanggal untuk input type="date" (YYYY-MM-DD)
+    if(deadline) {
+        const dateObj = new Date(deadline);
+        const yyyy = dateObj.getFullYear();
+        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const dd = String(dateObj.getDate()).padStart(2, '0');
+        document.getElementById('deadline').value = `${yyyy}-${mm}-${dd}`;
+    }
+    
+    // Scroll ke atas agar user lihat form
+    window.scrollTo(0,0);
 }
 
-// 4. HAPUS TUGAS (DELETE)
-// Fungsi ini harus ada di global scope (window) agar bisa dipanggil onclick di HTML
-window.deleteTask = async function(id) {
-    if (confirm('Yakin ingin menghapus tugas ini?')) {
-        try {
-            const res = await fetch(`${API_URL}/tasks?id=${id}`, { // Vercel terkadang butuh query param atau path param tergantung config
-                method: 'DELETE',
-                // Opsional: support body untuk backend tertentu, tapi DELETE biasanya lewat URL
-            });
-            
-            // Coba cara kedua jika cara pertama gagal (karena struktur route express /:id)
-            if(res.status === 404) {
-                 await fetch(`${API_URL}/tasks/${id}`, { method: 'DELETE' });
-            }
+// 5. BATAL EDIT / RESET FORM
+window.resetForm = function() {
+    isEditing = false;
+    document.getElementById('taskForm').reset();
+    document.getElementById('taskId').value = "";
+    
+    document.getElementById('formTitle').innerText = "Tambah Tugas Baru";
+    document.getElementById('btnSubmit').innerText = "Simpan Tugas";
+    document.getElementById('btnSubmit').style.backgroundColor = "#28a745"; // Hijau
+    document.getElementById('btnSubmit').style.color = "white";
+    document.getElementById('btnCancel').style.display = "none";
+}
 
-            loadTasks();
-        } catch (error) {
-            console.error("Gagal hapus:", error);
-            alert("Gagal menghapus tugas.");
-        }
+// 6. DELETE TUGAS
+window.deleteTask = async function(id) {
+    if (confirm('Yakin hapus?')) {
+        await fetch(`${API_URL}/tasks/${id}`, { method: 'DELETE' });
+        loadTasks();
     }
 }
