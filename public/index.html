@@ -3,72 +3,331 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Akademik Mahasiswa</title>
+    <title>Student Task Manager - Informatika</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; max-width: 800px; margin: 0 auto; padding: 20px; }
+        :root {
+            /* Palette Warna Informatika */
+            --primary: #0f172a;    /* Navy Blue Gelap */
+            --secondary: #1e293b;  /* Sidebar Color */
+            --accent: #3b82f6;     /* Biru Teknologi */
+            --accent-hover: #2563eb;
+            --bg-light: #f1f5f9;
+            --text-dark: #1e293b;
+            --text-gray: #64748b;
+            --white: #ffffff;
+            
+            /* Status Colors */
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-light); color: var(--text-dark); height: 100vh; overflow: hidden; }
+
+        /* --- 1. LOGIN & REGISTER PAGE (Split Screen) --- */
+        #auth-section { display: flex; height: 100vh; width: 100%; transition: opacity 0.3s; }
+        .auth-hidden { display: none !important; }
+
+        .auth-left {
+            flex: 1;
+            background: linear-gradient(135deg, var(--primary), #1e1b4b);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 60px;
+            position: relative;
+            overflow: hidden;
+        }
+        .auth-left::before {
+            content: "";
+            position: absolute;
+            width: 300px; height: 300px;
+            background: rgba(59, 130, 246, 0.2);
+            border-radius: 50%;
+            top: -50px; left: -50px;
+        }
+
+        .auth-right {
+            flex: 1;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .auth-card {
+            width: 100%; max-width: 400px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        h2 { font-weight: 700; margin-bottom: 10px; color: var(--primary); }
+        .subtitle { color: var(--text-gray); margin-bottom: 30px; font-size: 0.9rem; }
+
+        .input-group { margin-bottom: 20px; position: relative; }
+        .input-group i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-gray); }
+        .input-group input, .input-group select {
+            width: 100%; padding: 12px 12px 12px 45px;
+            border: 1px solid #e2e8f0; border-radius: 8px;
+            font-size: 14px; transition: 0.3s;
+        }
+        .input-group input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+
+        .btn-auth {
+            width: 100%; padding: 12px; background: var(--accent); color: white;
+            border: none; border-radius: 8px; font-weight: 600; cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-auth:hover { background: var(--accent-hover); transform: translateY(-1px); }
+
+        .switch-auth { text-align: center; margin-top: 20px; font-size: 0.9rem; }
+        .switch-auth a { color: var(--accent); text-decoration: none; font-weight: 600; cursor: pointer; }
+
+        /* --- 2. DASHBOARD (Sidebar + Content) --- */
+        #dashboard-section { display: none; height: 100vh; display: flex; }
+        .dashboard-active { display: flex !important; }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px; background: var(--primary); color: white;
+            display: flex; flex-direction: column; padding: 20px;
+            transition: 0.3s;
+        }
+        .brand { font-size: 1.2rem; font-weight: 700; margin-bottom: 40px; display: flex; align-items: center; gap: 10px; }
+        .nav-item {
+            padding: 12px 15px; margin-bottom: 5px; border-radius: 8px;
+            cursor: pointer; display: flex; align-items: center; gap: 10px;
+            color: #cbd5e1; transition: 0.2s;
+        }
+        .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.1); color: white; }
+        .user-profile-mini {
+            margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .avatar { width: 40px; height: 40px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+
+        /* Main Content */
+        .main-content { flex: 1; overflow-y: auto; padding: 30px; background: var(--bg-light); }
         
-        /* Kartu Profil User */
-        .user-card { background: linear-gradient(135deg, #007bff, #0056b3); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .user-info h2 { margin: 0; font-size: 1.5em; }
-        .user-info p { margin: 5px 0 0; opacity: 0.9; }
+        .header-dash { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .welcome-text h1 { font-size: 1.8rem; color: var(--primary); }
+        .btn-logout { background: transparent; border: 1px solid #cbd5e1; padding: 8px 15px; border-radius: 6px; cursor: pointer; color: var(--text-gray); }
+        .btn-logout:hover { background: #fee2e2; color: var(--danger); border-color: var(--danger); }
 
-        .container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 6px; border: 1px solid #ddd; box-sizing: border-box; }
+        /* Cards & Grid */
+        .grid-container { display: grid; grid-template-columns: 350px 1fr; gap: 30px; }
+        @media (max-width: 1000px) { .grid-container { grid-template-columns: 1fr; } }
+
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); margin-bottom: 20px; }
+        .card-header { font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; color: var(--secondary); display: flex; justify-content: space-between; }
+
+        /* Task List Styling */
+        .task-list { list-style: none; }
+        .task-card {
+            background: white; border: 1px solid #e2e8f0; border-radius: 10px;
+            padding: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;
+            transition: all 0.2s; position: relative; overflow: hidden;
+        }
+        .task-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); border-color: var(--accent); }
         
-        button.btn-save { background: #28a745; color: white; border: none; font-weight: bold; cursor: pointer; }
-        button.btn-cancel { background: #6c757d; color: white; border: none; display: none; margin-top: 0;}
-        button.btn-delete { background: #dc3545; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; float: right;}
-        button.btn-edit { background: #ffc107; color: #333; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; float: right; margin-right: 5px;}
+        /* Status Indicators */
+        .task-card.status-Belum { border-left: 4px solid var(--danger); }
+        .task-card.status-Sedang { border-left: 4px solid var(--warning); }
+        .task-card.status-Selesai { border-left: 4px solid var(--success); }
 
-        ul { list-style: none; padding: 0; }
-        .task-item { background: #fff; border-bottom: 1px solid #eee; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .task-details h3 { margin: 0 0 5px; color: #333; }
-        .task-meta { font-size: 0.85em; color: #666; }
-        .badge { padding: 3px 8px; border-radius: 10px; font-size: 0.75em; color: white; }
-        .badge-Tinggi { background: #dc3545; }
-        .badge-Sedang { background: #ffc107; color: #333; }
-        .badge-Rendah { background: #28a745; }
+        .task-info h4 { font-size: 1rem; color: var(--text-dark); margin-bottom: 5px; }
+        .task-meta { font-size: 0.8rem; color: var(--text-gray); display: flex; gap: 10px; align-items: center; }
+        
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
+        .bg-matkul { background: #e0f2fe; color: #0369a1; }
+        .bg-prio-Tinggi { background: #fee2e2; color: #991b1b; }
+        .bg-prio-Sedang { background: #fef3c7; color: #92400e; }
+        .bg-prio-Rendah { background: #dcfce7; color: #166534; }
 
-        .actions { min-width: 120px; }
+        .actions button {
+            background: none; border: none; cursor: pointer; padding: 5px; color: var(--text-gray); transition: 0.2s;
+        }
+        .actions button:hover { color: var(--accent); transform: scale(1.1); }
+        .actions button.btn-del:hover { color: var(--danger); }
+
+        /* Animations */
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Utility */
+        .hidden { display: none; }
+        .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid var(--accent); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
     </style>
 </head>
 <body>
 
-    <div class="user-card" id="userArea">
-        <div class="user-info">
-            <h2 id="userName">Memuat Data Mahasiswa...</h2>
-            <p id="userNim">NIM: - | Jurusan: -</p>
+    <div id="auth-section">
+        <div class="auth-left">
+            <h1>Student Task Manager</h1>
+            <p style="margin-top: 10px; opacity: 0.8; line-height: 1.6;">
+                Kelola tugas akademik program studi Informatika dengan lebih terstruktur, modern, dan efisien.
+            </p>
+            <div style="margin-top: 40px; display: flex; gap: 20px;">
+                <div><i class="fas fa-check-circle"></i> Manajemen Tugas</div>
+                <div><i class="fas fa-database"></i> Terintegrasi</div>
+            </div>
         </div>
-        <div style="font-size: 2em;">🎓</div>
-    </div>
-
-    <div class="container">
-        <h3 id="formTitle">Tambah Tugas Baru</h3>
-        <form id="taskForm">
-            <input type="hidden" id="taskId"> <input type="text" id="judul" placeholder="Judul Tugas (Contoh: Laporan Lab)" required>
-            
-            <select id="matkulSelect" required>
-                <option value="">-- Pilih Mata Kuliah --</option>
-            </select>
-
-            <div style="display: flex; gap: 10px;">
-                <select id="prioritas">
-                    <option value="Rendah">Low Priority</option>
-                    <option value="Sedang" selected>Medium Priority</option>
-                    <option value="Tinggi">High Priority</option>
-                </select>
-                <input type="date" id="deadline" required>
+        
+        <div class="auth-right">
+            <div class="auth-card" id="loginCard">
+                <h2>Selamat Datang</h2>
+                <p class="subtitle">Silakan login dengan akun mahasiswa Anda.</p>
+                <form id="loginForm">
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="loginEmail" placeholder="Email Mahasiswa" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="loginPass" placeholder="Kata Sandi" required>
+                    </div>
+                    <button type="submit" class="btn-auth">MASUK <i class="fas fa-arrow-right" style="margin-left:5px;"></i></button>
+                </form>
+                <div class="switch-auth">
+                    Belum punya akun? <a onclick="toggleAuth('register')">Daftar Sekarang</a>
+                </div>
             </div>
 
-            <button type="submit" class="btn-save" id="btnSubmit">Simpan Tugas</button>
-            <button type="button" class="btn-cancel" id="btnCancel" onclick="resetForm()">Batal Edit</button>
-        </form>
+            <div class="auth-card hidden" id="registerCard">
+                <h2>Buat Akun Baru</h2>
+                <p class="subtitle">Bergabung dengan komunitas Informatika.</p>
+                <form id="registerForm">
+                    <div class="input-group">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="regName" placeholder="Nama Lengkap" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-id-card"></i>
+                        <input type="text" id="regNim" placeholder="NIM" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="regEmail" placeholder="Email" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="regPass" placeholder="Kata Sandi" required>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <div class="input-group">
+                            <i class="fas fa-graduation-cap"></i>
+                            <input type="text" value="Informatika" readonly style="background: #f8fafc;">
+                        </div>
+                        <div class="input-group">
+                            <i class="fas fa-layer-group"></i>
+                            <input type="number" id="regSem" placeholder="Sem" min="1" max="14" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-auth">DAFTAR AKUN</button>
+                </form>
+                <div class="switch-auth">
+                    Sudah punya akun? <a onclick="toggleAuth('login')">Login di sini</a>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="container" style="margin-top: 20px;">
-        <h3>Daftar Tugas Akademik</h3>
-        <p id="loading">Sedang memuat data...</p>
-        <ul id="taskList"></ul>
+    <div id="dashboard-section">
+        <aside class="sidebar">
+            <div class="brand">
+                <i class="fas fa-laptop-code"></i> INFORMATIKA
+            </div>
+            <nav>
+                <div class="nav-item active"><i class="fas fa-th-large"></i> Dashboard</div>
+                <div class="nav-item"><i class="fas fa-book"></i> Mata Kuliah</div>
+                <div class="nav-item"><i class="fas fa-chart-pie"></i> Statistik</div>
+            </nav>
+            <div class="user-profile-mini">
+                <div class="avatar" id="navAvatar">MH</div>
+                <div style="font-size: 0.9rem;">
+                    <div id="navName" style="font-weight: 600;">Mahasiswa</div>
+                    <div id="navNim" style="opacity: 0.7; font-size: 0.8rem;">12345678</div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="header-dash">
+                <div class="welcome-text">
+                    <h1 id="welcomeMsg">Halo, Mahasiswa! 👋</h1>
+                    <p style="color: var(--text-gray);">Berikut adalah daftar tugas akademik Anda hari ini.</p>
+                </div>
+                <button onclick="logout()" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+
+            <div class="grid-container">
+                <div class="card">
+                    <div class="card-header">
+                        <span><i class="fas fa-plus-circle"></i> Tambah Tugas</span>
+                    </div>
+                    <form id="taskForm">
+                        <input type="hidden" id="taskId">
+                        
+                        <div class="input-group">
+                            <input type="text" id="judul" placeholder="Judul Tugas (Misal: Laporan Praktikum)" required>
+                        </div>
+                        
+                        <div class="input-group">
+                            <select id="matkulSelect" required>
+                                <option value="">-- Pilih Mata Kuliah --</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label style="font-size:0.8rem; color:#64748b; margin-bottom:5px; display:block;">Deadline</label>
+                            <input type="date" id="deadline" required style="padding-left:12px;">
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div class="input-group">
+                                <select id="prioritas">
+                                    <option value="Rendah">Low</option>
+                                    <option value="Sedang" selected>Medium</option>
+                                    <option value="Tinggi">High</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <select id="status">
+                                    <option value="Belum Dikerjakan">To Do</option>
+                                    <option value="Sedang Dikerjakan">In Progress</option>
+                                    <option value="Selesai">Done</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-auth" id="btnSaveTask">
+                            <i class="fas fa-save"></i> SIMPAN TUGAS
+                        </button>
+                        <button type="button" onclick="resetForm()" class="btn-auth" id="btnCancel" style="background: #94a3b8; margin-top: 10px; display: none;">Batal</button>
+                    </form>
+                </div>
+
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <h3 style="color:var(--secondary);">Daftar Tugas Saya</h3>
+                        <span id="taskCount" style="background:var(--accent); color:white; padding:2px 8px; border-radius:10px; font-size:0.8rem;">0</span>
+                    </div>
+                    
+                    <ul id="taskList" class="task-list">
+                        <div style="text-align:center; margin-top:50px; color:#cbd5e1;">
+                            <i class="fas fa-clipboard-list" style="font-size:3rem; margin-bottom:10px;"></i>
+                            <p>Memuat data...</p>
+                        </div>
+                    </ul>
+                </div>
+            </div>
+        </main>
     </div>
 
     <script src="script.js"></script>

@@ -3,95 +3,128 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 
 const app = express();
+app.use(cors());
+app.use(express.json());
 
 // 1. KONEKSI DATABASE
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log("✅ Database Connected"))
   .catch(err => console.error("❌ Database Error:", err));
 
-// 2. DEFINISI SCHEMA (3 TABEL)
+// 2. SCHEMA DATABASE (3 Tabel Utama)
 
-// A. Tabel User (Pengguna)
-const userSchema = new mongoose.Schema({
-  nama_lengkap: String,
+// A. Tabel Pengguna (User)
+const penggunaSchema = new mongoose.Schema({
+  nama_lengkap: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  kata_sandi: { type: String, required: true }, // Simple text for demo (Gunakan bcrypt di real app)
   nim: String,
   jurusan: String,
-  semester: Number
+  semester: Number,
+  tanggal_daftar: { type: Date, default: Date.now },
+  dihapus_pada: { type: Date, default: null }
 });
-const User = mongoose.model('User', userSchema);
+const Pengguna = mongoose.model('Pengguna', penggunaSchema);
 
-// B. Tabel Course (Mata Kuliah)
-const courseSchema = new mongoose.Schema({
+// B. Tabel Mata Kuliah (Course)
+const mataKuliahSchema = new mongoose.Schema({
   kode_mata_kuliah: String,
   nama_mata_kuliah: String,
   dosen_pengampu: String,
-  semester: Number
+  semester: Number,
+  dihapus_pada: { type: Date, default: null }
 });
-const Course = mongoose.model('Course', courseSchema);
+const MataKuliah = mongoose.model('MataKuliah', mataKuliahSchema);
 
-// C. Tabel Task (Tugas) - Punya RELASI (Foreign Key)
-const taskSchema = new mongoose.Schema({
-  id_pengguna: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Relasi ke User
-  id_mata_kuliah: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' }, // Relasi ke Course
-  judul_tugas: String,
+// C. Tabel Tugas (Task) - RELASI UTAMA
+const tugasSchema = new mongoose.Schema({
+  id_pengguna: { type: mongoose.Schema.Types.ObjectId, ref: 'Pengguna', required: true },
+  id_mata_kuliah: { type: mongoose.Schema.Types.ObjectId, ref: 'MataKuliah', required: true },
+  judul_tugas: { type: String, required: true },
   deskripsi_tugas: String,
-  tenggat_waktu: Date,
-  prioritas: { type: String, enum: ['Rendah', 'Sedang', 'Tinggi'] },
-  status_tugas: { type: String, default: 'Belum' }, // Belum/Selesai
-  createdAt: { type: Date, default: Date.now }
+  tenggat_waktu: { type: Date, required: true },
+  status_tugas: { type: String, enum: ['Belum Dikerjakan', 'Sedang Dikerjakan', 'Selesai'], default: 'Belum Dikerjakan' },
+  prioritas: { type: String, enum: ['Rendah', 'Sedang', 'Tinggi'], default: 'Sedang' },
+  tanggal_dibuat: { type: Date, default: Date.now },
+  tanggal_diperbarui: { type: Date, default: Date.now },
+  dihapus_pada: { type: Date, default: null }
 });
-const Task = mongoose.model('Task', taskSchema);
+const Tugas = mongoose.model('Tugas', tugasSchema);
 
-// 3. MIDDLEWARE
-app.use(cors());
-app.use(express.json());
+// 3. AUTHENTICATION ROUTES
 
-// 4. ROUTES (CRUD LENGKAP)
+// Register
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { email } = req.body;
+    const existingUser = await Pengguna.findOne({ email });
+    if (existingUser) return res.status(400).json({ error: "Email sudah terdaftar!" });
 
-app.get('/api', (req, res) => res.send("Server Academic System Ready!"));
-
-// --- ROUTES USER (Untuk Init Data) ---
-app.get('/api/users', async (req, res) => {
-  const users = await User.find();
-  res.json(users);
-});
-app.post('/api/users', async (req, res) => {
-  const newUser = new User(req.body);
-  await newUser.save();
-  res.json(newUser);
+    const newUser = new Pengguna(req.body);
+    await newUser.save();
+    res.json(newUser);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-// --- ROUTES COURSES (Untuk Dropdown Matkul) ---
-app.get('/api/courses', async (req, res) => {
-  const courses = await Course.find();
+// Login
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, kata_sandi } = req.body;
+    // Cari user aktif (tidak dihapus)
+    const user = await Pengguna.findOne({ email, dihapus_pada: null });
+    
+    if (!user || user.kata_sandi !== kata_sandi) {
+      return res.status(401).json({ error: "Email atau Password salah!" });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 4. DATA ROUTES
+
+// Get Mata Kuliah (Auto Seed if Empty)
+app.get('/api/mata-kuliah', async (req, res) => {
+  let courses = await MataKuliah.find({ dihapus_pada: null });
+  
+  // Auto-seed jika kosong (untuk kemudahan demo)
+  if (courses.length === 0) {
+    const seeds = [
+      { kode_mata_kuliah: "IF201", nama_mata_kuliah: "Pemrograman Web Lanjut", dosen_pengampu: "Dr. Budi Santoso", semester: 4 },
+      { kode_mata_kuliah: "IF202", nama_mata_kuliah: "Basis Data II", dosen_pengampu: "Prof. Siti Aminah", semester: 4 },
+      { kode_mata_kuliah: "IF203", nama_mata_kuliah: "Kecerdasan Buatan", dosen_pengampu: "Dr. Rahmat", semester: 4 },
+      { kode_mata_kuliah: "IF204", nama_mata_kuliah: "Jaringan Komputer", dosen_pengampu: "Ir. Joko", semester: 4 }
+    ];
+    await MataKuliah.insertMany(seeds);
+    courses = await MataKuliah.find({ dihapus_pada: null });
+  }
   res.json(courses);
 });
-app.post('/api/courses', async (req, res) => {
-  const newCourse = new Course(req.body);
-  await newCourse.save();
-  res.json(newCourse);
-});
 
-// --- ROUTES TASKS (INTI CRUD) ---
+// --- CRUD TUGAS (User Specific) ---
 
-// READ (Ambil tugas + Data Matkulnya)
-app.get('/api/tasks', async (req, res) => {
+// GET Tugas (Filtered by User ID)
+app.get('/api/tugas', async (req, res) => {
   try {
-    // .populate() adalah cara Mongoose melakukan JOIN tabel
-    const tasks = await Task.find()
-      .populate('id_mata_kuliah') // Ambil detail matkul
-      .populate('id_pengguna')    // Ambil detail user
-      .sort({ createdAt: -1 });
+    const { userId } = req.query; // Ambil ID User dari query params
+    if (!userId) return res.status(400).json({ error: "User ID diperlukan" });
+
+    const tasks = await Tugas.find({ id_pengguna: userId, dihapus_pada: null })
+      .populate('id_mata_kuliah')
+      .sort({ tenggat_waktu: 1 });
     res.json(tasks);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// CREATE (Tambah Tugas)
-app.post('/api/tasks', async (req, res) => {
+// POST Tugas
+app.post('/api/tugas', async (req, res) => {
   try {
-    const newTask = new Task(req.body);
+    const newTask = new Tugas(req.body);
     await newTask.save();
     res.json(newTask);
   } catch (error) {
@@ -99,29 +132,29 @@ app.post('/api/tasks', async (req, res) => {
   }
 });
 
-// UPDATE (Edit Tugas) - FITUR BARU!
-app.put('/api/tasks/:id', async (req, res) => {
+// PUT Tugas
+app.put('/api/tugas/:id', async (req, res) => {
   try {
-    const { id } = req.params;
-    // { new: true } agar data yg dikembalikan adalah data yg sudah diedit
-    const updatedTask = await Task.findByIdAndUpdate(id, req.body, { new: true });
+    req.body.tanggal_diperbarui = new Date();
+    const updatedTask = await Tugas.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(updatedTask);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// DELETE (Hapus Tugas)
-app.delete('/api/tasks/:id', async (req, res) => {
+// DELETE Tugas (Soft Delete)
+app.delete('/api/tugas/:id', async (req, res) => {
   try {
-    const { id } = req.params;
-    await Task.findByIdAndDelete(id);
-    res.json({ message: "Deleted" });
+    // Soft delete: update field dihapus_pada
+    await Tugas.findByIdAndUpdate(req.params.id, { dihapus_pada: new Date() });
+    res.json({ message: "Berhasil dihapus" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
+// Server Init
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 

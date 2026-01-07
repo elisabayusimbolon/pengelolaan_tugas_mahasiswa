@@ -1,210 +1,251 @@
 const API_URL = '/api';
-
-// Variabel Global untuk menyimpan State
-let currentUserId = null;
+let currentUser = null;
 let isEditing = false;
 
-document.addEventListener('DOMContentLoaded', async () => {
-    await initSystem(); // Cek User & Matkul dulu
-    loadTasks();        // Baru load tugas
+// === 1. SESSION MANAGEMENT ===
+document.addEventListener('DOMContentLoaded', () => {
+    const storedUser = localStorage.getItem('stm_user');
+    if (storedUser) {
+        currentUser = JSON.parse(storedUser);
+        showDashboard();
+    } else {
+        showAuth();
+    }
 });
 
-// 1. INISIALISASI SISTEM (Auto-Seed Data)
-async function initSystem() {
-    try {
-        // A. Cek User
-        let resUser = await fetch(`${API_URL}/users`);
-        let users = await resUser.json();
-
-        if (users.length === 0) {
-            // Jika kosong, buat User Mahasiswa Dummy
-            const newUser = await fetch(`${API_URL}/users`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    nama_lengkap: "Mahasiswa Teladan", 
-                    nim: "12345678", 
-                    jurusan: "Teknik Informatika", 
-                    semester: 3 
-                })
-            });
-            const created = await newUser.json();
-            currentUserId = created._id;
-            users = [created];
-        } else {
-            currentUserId = users[0]._id;
-        }
-
-        // Tampilkan Data User di UI
-        const activeUser = users[0];
-        document.getElementById('userName').innerText = activeUser.nama_lengkap;
-        document.getElementById('userNim').innerText = `NIM: ${activeUser.nim} | ${activeUser.jurusan}`;
-
-        // B. Cek & Isi Dropdown Mata Kuliah
-        let resCourse = await fetch(`${API_URL}/courses`);
-        let courses = await resCourse.json();
-
-        if (courses.length === 0) {
-            // Buat 3 Matkul Dummy Otomatis
-            const dummyCourses = [
-                { kode_mata_kuliah: "IF101", nama_mata_kuliah: "Pemrograman Web", semester: 3 },
-                { kode_mata_kuliah: "IF102", nama_mata_kuliah: "Basis Data", semester: 3 },
-                { kode_mata_kuliah: "IF103", nama_mata_kuliah: "Algoritma", semester: 1 }
-            ];
-
-            for (let c of dummyCourses) {
-                await fetch(`${API_URL}/courses`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(c)
-                });
-            }
-            // Fetch ulang setelah buat baru
-            resCourse = await fetch(`${API_URL}/courses`);
-            courses = await resCourse.json();
-        }
-
-        // Masukkan ke Dropdown HTML
-        const select = document.getElementById('matkulSelect');
-        courses.forEach(c => {
-            const option = document.createElement('option');
-            option.value = c._id; // Value-nya adalah ID Matkul (Relasi)
-            option.text = `${c.kode_mata_kuliah} - ${c.nama_mata_kuliah}`;
-            select.appendChild(option);
-        });
-
-    } catch (error) {
-        console.error("Gagal init sistem:", error);
-    }
-}
-
-// 2. LOAD TASKS (READ)
-async function loadTasks() {
-    const list = document.getElementById('taskList');
-    document.getElementById('loading').style.display = 'block';
-    list.innerHTML = '';
-
-    try {
-        const res = await fetch(`${API_URL}/tasks`);
-        const tasks = await res.json();
-
-        tasks.forEach(task => {
-            const item = document.createElement('li');
-            item.className = 'task-item';
-            
-            // Handle tanggal & null check
-            const date = task.tenggat_waktu ? new Date(task.tenggat_waktu).toLocaleDateString('id-ID') : '-';
-            const matkulName = task.id_mata_kuliah ? task.id_mata_kuliah.nama_mata_kuliah : 'Umum';
-
-            item.innerHTML = `
-                <div class="task-details">
-                    <h3>${task.judul_tugas} <span class="badge badge-${task.prioritas}">${task.prioritas}</span></h3>
-                    <div class="task-meta">
-                        📚 ${matkulName} | 📅 Deadline: ${date}
-                    </div>
-                </div>
-                <div class="actions">
-                    <button onclick="deleteTask('${task._id}')" class="btn-delete">Hapus</button>
-                    <button onclick="prepareEdit('${task._id}', '${task.judul_tugas}', '${task.id_mata_kuliah?._id}', '${task.prioritas}', '${task.tenggat_waktu}')" class="btn-edit">Edit</button>
-                </div>
-            `;
-            list.appendChild(item);
-        });
-    } catch (error) {
-        console.error(error);
-    } finally {
-        document.getElementById('loading').style.display = 'none';
-    }
-}
-
-// 3. HANDLE SUBMIT (CREATE & UPDATE)
-document.getElementById('taskForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
+function toggleAuth(view) {
+    const loginCard = document.getElementById('loginCard');
+    const regCard = document.getElementById('registerCard');
     
-    const id = document.getElementById('taskId').value;
-    const judul = document.getElementById('judul').value;
-    const matkul = document.getElementById('matkulSelect').value;
-    const prioritas = document.getElementById('prioritas').value;
-    const deadline = document.getElementById('deadline').value;
+    if (view === 'register') {
+        loginCard.classList.add('hidden');
+        regCard.classList.remove('hidden');
+    } else {
+        regCard.classList.add('hidden');
+        loginCard.classList.remove('hidden');
+    }
+}
 
-    const payload = {
-        id_pengguna: currentUserId,
-        id_mata_kuliah: matkul,
-        judul_tugas: judul,
-        prioritas: prioritas,
-        tenggat_waktu: deadline
+function logout() {
+    localStorage.removeItem('stm_user');
+    currentUser = null;
+    showAuth();
+}
+
+function showAuth() {
+    document.getElementById('auth-section').classList.remove('auth-hidden');
+    document.getElementById('dashboard-section').classList.remove('dashboard-active');
+}
+
+function showDashboard() {
+    document.getElementById('auth-section').classList.add('auth-hidden');
+    document.getElementById('dashboard-section').classList.add('dashboard-active');
+    
+    // Set Header Info
+    document.getElementById('welcomeMsg').innerText = `Halo, ${currentUser.nama_lengkap.split(' ')[0]}! 👋`;
+    document.getElementById('navName').innerText = currentUser.nama_lengkap;
+    document.getElementById('navNim').innerText = currentUser.nim;
+    document.getElementById('navAvatar').innerText = currentUser.nama_lengkap.charAt(0);
+
+    // Load Data
+    loadMatkul();
+    loadTasks();
+}
+
+// === 2. AUTHENTICATION LOGIC ===
+
+// REGISTER
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = {
+        nama_lengkap: document.getElementById('regName').value,
+        nim: document.getElementById('regNim').value,
+        email: document.getElementById('regEmail').value,
+        kata_sandi: document.getElementById('regPass').value,
+        jurusan: "Informatika",
+        semester: document.getElementById('regSem').value
     };
 
     try {
-        let url = `${API_URL}/tasks`;
+        const res = await fetch(`${API_URL}/auth/register`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        
+        if (res.ok) {
+            alert("Registrasi Berhasil! Silakan Login.");
+            toggleAuth('login');
+            e.target.reset();
+        } else {
+            alert(result.error);
+        }
+    } catch (err) { alert("Error koneksi server"); }
+});
+
+// LOGIN
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value;
+    const pass = document.getElementById('loginPass').value;
+
+    try {
+        const res = await fetch(`${API_URL}/auth/login`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, kata_sandi: pass })
+        });
+        const user = await res.json();
+
+        if (res.ok) {
+            localStorage.setItem('stm_user', JSON.stringify(user));
+            currentUser = user;
+            showDashboard();
+        } else {
+            alert(user.error);
+        }
+    } catch (err) { alert("Error Login"); }
+});
+
+// === 3. CORE FEATURES (CRUD) ===
+
+async function loadMatkul() {
+    try {
+        const res = await fetch(`${API_URL}/mata-kuliah`);
+        const data = await res.json();
+        const select = document.getElementById('matkulSelect');
+        select.innerHTML = '<option value="">-- Pilih Mata Kuliah --</option>';
+        data.forEach(m => {
+            select.innerHTML += `<option value="${m._id}">${m.kode_mata_kuliah} - ${m.nama_mata_kuliah}</option>`;
+        });
+    } catch (err) { console.error("Gagal load matkul"); }
+}
+
+async function loadTasks() {
+    const list = document.getElementById('taskList');
+    list.innerHTML = '<div style="text-align:center; padding:20px;"><div class="loading-spinner"></div></div>';
+
+    try {
+        // Fetch tasks spesifik user yang sedang login
+        const res = await fetch(`${API_URL}/tugas?userId=${currentUser._id}`);
+        const tasks = await res.json();
+
+        document.getElementById('taskCount').innerText = tasks.length;
+        list.innerHTML = '';
+
+        if (tasks.length === 0) {
+            list.innerHTML = `<div style="text-align:center; padding:40px; color:#94a3b8;">
+                <i class="fas fa-check-circle" style="font-size:2rem; margin-bottom:10px;"></i>
+                <p>Tidak ada tugas. Selamat bersantai!</p>
+            </div>`;
+            return;
+        }
+
+        tasks.forEach(t => {
+            const date = new Date(t.tenggat_waktu).toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' });
+            const statusClass = `status-${t.status_tugas.split(' ')[0]}`; // Ambil kata pertama
+            
+            const html = `
+            <li class="task-card ${statusClass}">
+                <div class="task-info">
+                    <h4>${t.judul_tugas}</h4>
+                    <div class="task-meta">
+                        <span class="badge bg-matkul"><i class="fas fa-book"></i> ${t.id_mata_kuliah?.nama_mata_kuliah || 'N/A'}</span>
+                        <span><i class="far fa-calendar-alt"></i> ${date}</span>
+                        <span class="badge bg-prio-${t.prioritas}">${t.prioritas}</span>
+                    </div>
+                </div>
+                <div class="actions">
+                    <button onclick="editTask('${t._id}', '${t.judul_tugas}', '${t.id_mata_kuliah?._id}', '${t.tenggat_waktu}', '${t.prioritas}', '${t.status_tugas}')">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn-del" onclick="deleteTask('${t._id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </li>
+            `;
+            list.innerHTML += html;
+        });
+
+    } catch (err) { console.error(err); }
+}
+
+// SAVE & UPDATE TUGAS
+document.getElementById('taskForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveTask');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<div class="loading-spinner"></div> Saving...';
+    btn.disabled = true;
+
+    const data = {
+        id_pengguna: currentUser._id,
+        judul_tugas: document.getElementById('judul').value,
+        id_mata_kuliah: document.getElementById('matkulSelect').value,
+        tenggat_waktu: document.getElementById('deadline').value,
+        prioritas: document.getElementById('prioritas').value,
+        status_tugas: document.getElementById('status').value
+    };
+
+    try {
+        let url = `${API_URL}/tugas`;
         let method = 'POST';
 
-        // Jika sedang Edit, ubah URL dan Method
         if (isEditing) {
-            url = `${API_URL}/tasks/${id}`;
-            method = 'PUT'; // Method Update
+            url = `${API_URL}/tugas/${document.getElementById('taskId').value}`;
+            method = 'PUT';
         }
 
         await fetch(url, {
             method: method,
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(data)
         });
 
-        resetForm(); // Bersihkan form
-        loadTasks(); // Reload data
-    } catch (error) {
-        alert("Gagal menyimpan data");
+        resetForm();
+        loadTasks();
+    } catch (err) { alert("Gagal menyimpan data"); }
+    finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     }
 });
 
-// 4. PREPARE EDIT (Mengisi Form dengan Data Lama)
-window.prepareEdit = function(id, judul, idMatkul, prioritas, deadline) {
+// Helper Functions
+window.editTask = function(id, judul, matkulId, date, prio, status) {
     isEditing = true;
-    
-    // Ubah Tampilan Form
-    document.getElementById('formTitle').innerText = "Edit Tugas";
-    document.getElementById('btnSubmit').innerText = "Update Data";
-    document.getElementById('btnSubmit').style.backgroundColor = "#ffc107"; // Kuning
-    document.getElementById('btnSubmit').style.color = "#333";
-    document.getElementById('btnCancel').style.display = "inline-block";
-
-    // Isi Input
     document.getElementById('taskId').value = id;
     document.getElementById('judul').value = judul;
-    document.getElementById('matkulSelect').value = idMatkul || "";
-    document.getElementById('prioritas').value = prioritas;
+    document.getElementById('matkulSelect').value = matkulId;
+    document.getElementById('prioritas').value = prio;
+    document.getElementById('status').value = status;
     
-    // Format tanggal untuk input type="date" (YYYY-MM-DD)
-    if(deadline) {
-        const dateObj = new Date(deadline);
-        const yyyy = dateObj.getFullYear();
-        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const dd = String(dateObj.getDate()).padStart(2, '0');
+    // Format Date for Input
+    if(date) {
+        const d = new Date(date);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
         document.getElementById('deadline').value = `${yyyy}-${mm}-${dd}`;
     }
+
+    document.getElementById('btnSaveTask').innerHTML = '<i class="fas fa-sync"></i> UPDATE TUGAS';
+    document.getElementById('btnCancel').style.display = 'block';
     
-    // Scroll ke atas agar user lihat form
-    window.scrollTo(0,0);
+    // Scroll to top mobile
+    if(window.innerWidth < 1000) window.scrollTo(0,0);
 }
 
-// 5. BATAL EDIT / RESET FORM
+window.deleteTask = async function(id) {
+    if(confirm("Hapus tugas ini?")) {
+        await fetch(`${API_URL}/tugas/${id}`, { method: 'DELETE' });
+        loadTasks();
+    }
+}
+
 window.resetForm = function() {
     isEditing = false;
     document.getElementById('taskForm').reset();
-    document.getElementById('taskId').value = "";
-    
-    document.getElementById('formTitle').innerText = "Tambah Tugas Baru";
-    document.getElementById('btnSubmit').innerText = "Simpan Tugas";
-    document.getElementById('btnSubmit').style.backgroundColor = "#28a745"; // Hijau
-    document.getElementById('btnSubmit').style.color = "white";
-    document.getElementById('btnCancel').style.display = "none";
-}
-
-// 6. DELETE TUGAS
-window.deleteTask = async function(id) {
-    if (confirm('Yakin hapus?')) {
-        await fetch(`${API_URL}/tasks/${id}`, { method: 'DELETE' });
-        loadTasks();
-    }
+    document.getElementById('btnSaveTask').innerHTML = '<i class="fas fa-save"></i> SIMPAN TUGAS';
+    document.getElementById('btnCancel').style.display = 'none';
 }
