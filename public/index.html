@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manajer Tugas Mahasiswa - Informatika</title>
+    <title>Sistem Akademik Informatika</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
@@ -23,6 +23,7 @@
             --success: #10b981;
             --danger: #ef4444;
             --warning: #f59e0b;
+            --info: #0ea5e9;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
@@ -33,7 +34,7 @@
         .fade-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- TOAST NOTIFICATION --- */
+        /* --- TOAST --- */
         #toast-container { position: fixed; bottom: 30px; right: 30px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
         .toast {
             background: white; padding: 16px 24px; border-radius: 8px;
@@ -48,123 +49,93 @@
         .toast-msg { font-size: 0.85rem; color: var(--text-gray); margin-top: 2px; }
         @keyframes slideInToast { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-        /* --- LOGIN & REGISTER (TIDAK BERUBAH) --- */
+        /* --- AUTH STYLES (UNCHANGED) --- */
         #auth-section { display: flex; height: 100vh; width: 100%; position: relative; }
-        
-        .auth-left {
-            flex: 1;
-            background: linear-gradient(145deg, #0f172a 0%, #020617 100%);
-            color: white;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 80px;
-            position: relative;
-            overflow: hidden;
-        }
-        .auth-left::before {
-            content: ""; position: absolute; top: -10%; left: -10%; width: 500px; height: 500px;
-            background: radial-gradient(circle, rgba(37,99,235,0.15) 0%, rgba(0,0,0,0) 70%);
-            border-radius: 50%; pointer-events: none;
-        }
+        .auth-left { flex: 1; background: linear-gradient(145deg, #0f172a 0%, #020617 100%); color: white; display: flex; flex-direction: column; justify-content: center; padding: 80px; position: relative; overflow: hidden; }
+        .auth-left::before { content: ""; position: absolute; top: -10%; left: -10%; width: 500px; height: 500px; background: radial-gradient(circle, rgba(37,99,235,0.15) 0%, rgba(0,0,0,0) 70%); border-radius: 50%; pointer-events: none; }
         .brand-logo { font-size: 3rem; margin-bottom: 20px; color: var(--accent); }
         .brand-title { font-size: 2.5rem; font-weight: 800; line-height: 1.2; margin-bottom: 15px; letter-spacing: -0.5px; }
         .brand-subtitle { font-size: 1.1rem; opacity: 0.8; font-weight: 300; line-height: 1.6; max-width: 80%; }
-
-        .auth-right {
-            flex: 1;
-            background: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-            position: relative;
-        }
-        
+        .auth-right { flex: 1; background: white; display: flex; align-items: center; justify-content: center; padding: 40px; position: relative; }
         .auth-card { width: 100%; max-width: 420px; padding: 40px; }
         .auth-header { margin-bottom: 30px; }
         .auth-header h2 { font-size: 1.8rem; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
         .auth-header p { color: var(--text-gray); font-size: 0.95rem; }
-
         .input-wrapper { margin-bottom: 20px; position: relative; }
         .input-wrapper label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--secondary); margin-bottom: 8px; }
-        .input-wrapper input {
-            width: 100%; padding: 14px 16px;
-            border: 1px solid var(--input-border);
-            border-radius: 8px; font-size: 0.95rem;
-            transition: all 0.2s; background: #f8fafc;
-        }
-        .input-wrapper input:focus {
-            background: white; border-color: var(--accent);
-            outline: none; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
-        }
+        .input-wrapper input { width: 100%; padding: 14px 16px; border: 1px solid var(--input-border); border-radius: 8px; font-size: 0.95rem; transition: all 0.2s; background: #f8fafc; }
+        .input-wrapper input:focus { background: white; border-color: var(--accent); outline: none; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
         .input-row { display: flex; gap: 15px; }
-
-        .btn-primary {
-            width: 100%; padding: 14px;
-            background: var(--accent); color: white;
-            border: none; border-radius: 8px;
-            font-weight: 600; font-size: 1rem;
-            cursor: pointer; transition: all 0.2s;
-            display: flex; justify-content: center; align-items: center; gap: 8px;
-            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
-        }
-        .btn-primary:hover {
-            background: var(--accent-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
-        }
+        .btn-primary { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 1rem; cursor: pointer; transition: all 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); }
+        .btn-primary:hover { background: var(--accent-hover); transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3); }
         .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
-
         .auth-footer { text-align: center; margin-top: 25px; font-size: 0.9rem; color: var(--text-gray); }
         .auth-footer a { color: var(--accent); text-decoration: none; font-weight: 600; cursor: pointer; transition: 0.2s; }
         .auth-footer a:hover { text-decoration: underline; color: var(--accent-hover); }
+
+        /* --- DASHBOARD STYLES --- */
+        #dashboard-section { display: none; height: 100vh; display: flex; }
+        .dashboard-active { display: flex !important; }
+        .sidebar { width: 260px; background: var(--primary); color: white; display: flex; flex-direction: column; padding: 25px; z-index: 10; box-shadow: 4px 0 20px rgba(0,0,0,0.1); }
+        .nav-item { padding: 12px 15px; margin-bottom: 5px; border-radius: 8px; cursor: pointer; color: #cbd5e1; display: flex; gap: 12px; align-items: center; transition:0.2s; font-weight: 500; }
+        .nav-item.active, .nav-item:hover { background: rgba(255,255,255,0.1); color: white; transform: translateX(5px); }
+        .nav-item i { width: 20px; text-align: center; }
+        .nav-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 15px 0; }
+        
+        .main-content { flex: 1; overflow-y: auto; padding: 40px; background: var(--bg-light); scroll-behavior: smooth; }
+        
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 25px; border: 1px solid #e2e8f0; }
+        .card-header { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; color: var(--primary); border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-full { grid-column: 1 / -1; }
+        .dash-input-group label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--secondary); margin-bottom: 6px; }
+        .dash-input-group input, .dash-input-group select, .dash-input-group textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; transition: 0.2s; }
+        .dash-input-group input:focus, .dash-input-group select:focus, .dash-input-group textarea:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        
+        .btn-dash { padding: 10px 20px; background: var(--accent); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; }
+        .btn-dash:hover { background: var(--accent-hover); transform: translateY(-1px); }
+        .btn-dash.cancel { background: #94a3b8; }
+        .btn-dash.cancel:hover { background: #64748b; }
+
+        /* LIST CARD STYLE */
+        .task-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: flex-start; transition: all 0.2s; position: relative; overflow: hidden; }
+        .task-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); border-color: var(--accent); }
+        .task-card.status-Belum { border-left: 4px solid var(--danger); }
+        .task-card.status-Sedang { border-left: 4px solid var(--warning); }
+        .task-card.status-Selesai { border-left: 4px solid var(--success); opacity: 0.7; }
+        .task-card.status-Selesai:hover { opacity: 1; }
+
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; margin-right: 5px; display: inline-block; letter-spacing: 0.5px; }
+        .bg-blue { background: #e0f2fe; color: #0369a1; }
+        .bg-gray { background: #f1f5f9; color: #475569; }
+        .bg-red { background: #fee2e2; color: #991b1b; }
+        .bg-yellow { background: #fef3c7; color: #92400e; }
+
+        /* NEW: STATS CARD STYLE */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; transition: 0.3s; }
+        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        .stat-number { font-size: 2.5rem; font-weight: 800; color: var(--primary); margin: 10px 0; }
+        .stat-label { color: var(--text-gray); font-size: 0.9rem; font-weight: 500; }
+        .stat-icon { font-size: 2rem; margin-bottom: 5px; opacity: 0.8; }
+
+        /* NEW: PROFILE STYLE */
+        .profile-header { background: linear-gradient(to right, var(--primary), var(--secondary)); padding: 40px; border-radius: 12px 12px 0 0; color: white; display: flex; align-items: center; gap: 20px; }
+        .profile-avatar { width: 80px; height: 80px; background: white; color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: 700; border: 4px solid rgba(255,255,255,0.2); }
+        .profile-body { background: white; padding: 30px; border-radius: 0 0 12px 12px; border: 1px solid #e2e8f0; border-top: none; }
+        .profile-row { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #f1f5f9; }
+        .profile-row:last-child { border-bottom: none; }
+        .profile-label { color: var(--text-gray); font-weight: 500; }
+        .profile-value { font-weight: 600; color: var(--primary); }
 
         @media (max-width: 900px) {
             .auth-left { display: none; }
             .auth-right { background: var(--bg-light); }
             .auth-card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+            .sidebar { position: fixed; height: 100vh; transform: translateX(-100%); transition: 0.3s; }
+            .sidebar.open { transform: translateX(0); }
         }
-
-        /* --- DASHBOARD STYLES (DIPERBAIKI) --- */
-        #dashboard-section { display: none; height: 100vh; display: flex; }
-        .dashboard-active { display: flex !important; }
-        
-        .sidebar { width: 260px; background: var(--primary); color: white; display: flex; flex-direction: column; padding: 25px; }
-        .nav-item { padding: 12px 15px; margin-bottom: 5px; border-radius: 8px; cursor: pointer; color: #cbd5e1; display: flex; gap: 10px; align-items: center; transition:0.2s; }
-        .nav-item.active, .nav-item:hover { background: rgba(255,255,255,0.1); color: white; }
-        
-        .main-content { flex: 1; overflow-y: auto; padding: 40px; background: var(--bg-light); }
-        
-        /* CARD & FORM STYLES UNTUK DASHBOARD */
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 25px; }
-        .card-header { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; color: var(--primary); border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; }
-        
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .form-full { grid-column: 1 / -1; }
-        
-        .dash-input-group label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--secondary); margin-bottom: 6px; }
-        .dash-input-group input, .dash-input-group select, .dash-input-group textarea {
-            width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; transition: 0.2s;
-        }
-        .dash-input-group input:focus, .dash-input-group select:focus, .dash-input-group textarea:focus {
-            border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-        
-        .task-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: flex-start; transition: transform 0.2s; }
-        .task-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .task-card.status-Belum { border-left: 4px solid var(--danger); }
-        .task-card.status-Sedang { border-left: 4px solid var(--warning); }
-        .task-card.status-Selesai { border-left: 4px solid var(--success); }
-        
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; margin-right: 5px; display: inline-block;}
-        .bg-blue { background: #e0f2fe; color: #0369a1; }
-        .bg-gray { background: #f1f5f9; color: #475569; }
-
-        .btn-dash { padding: 10px 20px; background: var(--accent); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
-        .btn-dash:hover { background: var(--accent-hover); }
-        .btn-dash.cancel { background: #94a3b8; }
-        .btn-dash.cancel:hover { background: #64748b; }
     </style>
 </head>
 <body>
@@ -185,14 +156,8 @@
                     <p>Silakan masukkan kredensial akademik Anda.</p>
                 </div>
                 <form id="loginForm">
-                    <div class="input-wrapper">
-                        <label>Email Mahasiswa</label>
-                        <input type="email" id="loginEmail" placeholder="nama@student.univ.ac.id" required>
-                    </div>
-                    <div class="input-wrapper">
-                        <label>Kata Sandi</label>
-                        <input type="password" id="loginPass" placeholder="••••••••" required>
-                    </div>
+                    <div class="input-wrapper"><label>Email Mahasiswa</label><input type="email" id="loginEmail" placeholder="nama@student.univ.ac.id" required></div>
+                    <div class="input-wrapper"><label>Kata Sandi</label><input type="password" id="loginPass" placeholder="••••••••" required></div>
                     <button type="submit" class="btn-primary" id="btnLogin">MASUK <i class="fas fa-arrow-right"></i></button>
                 </form>
                 <div class="auth-footer">Belum punya akun? <a onclick="toggleAuth('register')">Daftar sekarang</a></div>
@@ -220,10 +185,19 @@
 
     <div id="dashboard-section">
         <aside class="sidebar">
-            <h2 style="margin-bottom:30px;"><i class="fas fa-laptop-code"></i> INFORMATIKA</h2>
-            <nav>
-                <div class="nav-item active"><i class="fas fa-th-large"></i> Dashboard</div>
-                <div class="nav-item"><i class="fas fa-book"></i> Mata Kuliah</div>
+            <h2 style="margin-bottom:30px; font-size:1.4rem; letter-spacing:-0.5px;"><i class="fas fa-laptop-code"></i> INFORMATIKA</h2>
+            <nav id="sidebarNav">
+                <div class="nav-item active" data-target="view-dashboard"><i class="fas fa-th-large"></i> Dashboard</div>
+                <div class="nav-item" data-target="view-stats"><i class="fas fa-chart-pie"></i> Ringkasan</div>
+                <div class="nav-item" data-target="view-deadline"><i class="fas fa-bell"></i> Deadline</div>
+                
+                <div class="nav-divider"></div>
+                
+                <div class="nav-item" data-target="view-matkul"><i class="fas fa-book"></i> Mata Kuliah</div>
+                
+                <div class="nav-divider"></div>
+                
+                <div class="nav-item" data-target="view-profile"><i class="fas fa-user-circle"></i> Profil Saya</div>
             </nav>
             <div style="margin-top:auto; padding-top:20px; border-top:1px solid rgba(255,255,255,0.1);">
                 <div id="navName" style="font-weight:600;">Mahasiswa</div>
@@ -234,17 +208,17 @@
         <main class="main-content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
                 <div>
-                    <h1 id="welcomeMsg" style="color:var(--primary); font-size:1.8rem;">Halo! 👋</h1>
-                    <p style="color:var(--text-gray);">Berikut adalah ringkasan tugas akademik Anda.</p>
+                    <h1 id="welcomeMsg" style="color:var(--primary); font-size:1.8rem; font-weight: 800;">Halo! 👋</h1>
+                    <p style="color:var(--text-gray);">Manajemen tugas akademik Prodi Informatika.</p>
                 </div>
                 <button onclick="logout()" class="btn-primary" style="background:white; color:var(--danger); border:1px solid #e2e8f0; width:auto; padding: 8px 16px; font-size: 0.9rem;">
                     <i class="fas fa-sign-out-alt"></i> Keluar
                 </button>
             </div>
 
-            <div id="view-dashboard" class="view-section">
+            <div id="view-dashboard" class="view-section fade-in">
                 <div class="card">
-                    <div class="card-header"><i class="fas fa-plus-circle"></i> Input Tugas Baru</div>
+                    <div class="card-header"><span id="formTitle"><i class="fas fa-plus-circle"></i> Input Tugas Baru</span></div>
                     <form id="taskForm">
                         <input type="hidden" id="taskId">
                         <div class="form-grid">
@@ -254,7 +228,7 @@
                             </div>
                             <div class="dash-input-group form-full">
                                 <label>Deskripsi Tugas</label>
-                                <textarea id="deskripsi" placeholder="Detail instruksi tugas..."></textarea>
+                                <textarea id="deskripsi" placeholder="Detail instruksi tugas..." rows="2"></textarea>
                             </div>
                             <div class="dash-input-group">
                                 <label>Mata Kuliah</label>
@@ -282,7 +256,7 @@
                                 </select>
                             </div>
                             <div class="dash-input-group form-full">
-                                <label>Status</label>
+                                <label>Status Pengerjaan</label>
                                 <select id="status">
                                     <option value="Belum Dikerjakan">Belum Dikerjakan</option>
                                     <option value="Sedang Dikerjakan">Sedang Dikerjakan</option>
@@ -298,35 +272,114 @@
                 </div>
 
                 <div>
-                    <h3 style="margin-bottom:15px; color:var(--primary);">Daftar Tugas Aktif</h3>
+                    <h3 style="margin-bottom:15px; color:var(--primary); border-left:4px solid var(--accent); padding-left:10px;">Daftar Tugas Aktif</h3>
                     <div id="taskList">
-                        <p style="text-align:center; color:#94a3b8;">Memuat data tugas...</p>
+                        <p style="text-align:center; color:#94a3b8; padding: 20px;">Memuat data tugas...</p>
                     </div>
                 </div>
             </div>
 
-            <div id="view-matkul" class="view-section hidden">
+            <div id="view-stats" class="view-section hidden fade-in">
+                <h3 style="margin-bottom:20px;">Statistik Akademik</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <i class="fas fa-clipboard-list stat-icon" style="color: var(--accent)"></i>
+                        <div class="stat-number" id="statTotal">0</div>
+                        <div class="stat-label">Total Tugas</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-check-circle stat-icon" style="color: var(--success)"></i>
+                        <div class="stat-number" id="statSelesai">0</div>
+                        <div class="stat-label">Selesai</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-clock stat-icon" style="color: var(--warning)"></i>
+                        <div class="stat-number" id="statPending">0</div>
+                        <div class="stat-label">Sedang/Belum</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-fire stat-icon" style="color: var(--danger)"></i>
+                        <div class="stat-number" id="statUrgent">0</div>
+                        <div class="stat-label">Prioritas Tinggi</div>
+                    </div>
+                </div>
                 <div class="card">
-                    <div class="card-header"><i class="fas fa-university"></i> Kelola Mata Kuliah</div>
+                    <div class="card-header"><i class="fas fa-chart-bar"></i> Progress Mata Kuliah</div>
+                    <div id="matkulProgressList">
+                        <p style="color:var(--text-gray); text-align:center;">Belum ada data mata kuliah.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-deadline" class="view-section hidden fade-in">
+                <h3 style="margin-bottom:20px; color:var(--danger);"><i class="fas fa-exclamation-triangle"></i> Deadline Terdekat</h3>
+                <div class="card" style="border-left: 4px solid var(--danger);">
+                    <p style="color:var(--text-gray);">Menampilkan tugas yang tenggat waktunya dalam 7 hari ke depan.</p>
+                </div>
+                <div id="deadlineList">
+                    </div>
+            </div>
+
+            <div id="view-matkul" class="view-section hidden fade-in">
+                <div class="card">
+                    <div class="card-header">
+                        <span id="mkFormTitle"><i class="fas fa-university"></i> Kelola Mata Kuliah</span>
+                        <button onclick="resetMatkulForm()" class="btn-dash cancel" id="btnCancelMk" style="display:none; font-size:0.8rem; padding:5px 10px;">Batal Edit</button>
+                    </div>
                     <form id="matkulForm" style="display:flex; gap:15px; align-items:flex-end; flex-wrap:wrap;">
-                        <div class="dash-input-group" style="flex:1;">
+                        <input type="hidden" id="mkId">
+                        <div class="dash-input-group" style="flex:1; min-width: 100px;">
                             <label>Kode MK</label>
                             <input type="text" id="mkKode" placeholder="IF101" required>
                         </div>
-                        <div class="dash-input-group" style="flex:2;">
+                        <div class="dash-input-group" style="flex:2; min-width: 200px;">
                             <label>Nama Mata Kuliah</label>
                             <input type="text" id="mkNama" placeholder="Algoritma Pemrograman" required>
                         </div>
-                        <div class="dash-input-group" style="flex:2;">
+                        <div class="dash-input-group" style="flex:2; min-width: 200px;">
                             <label>Dosen Pengampu</label>
                             <input type="text" id="mkDosen" placeholder="Nama Dosen">
                         </div>
-                        <button type="submit" class="btn-dash" style="height:42px;"><i class="fas fa-plus"></i> Tambah</button>
+                        <button type="submit" class="btn-dash" style="height:42px;" id="btnSaveMk"><i class="fas fa-plus"></i> Tambah</button>
                     </form>
                 </div>
                 
                 <h3 style="margin-bottom:15px; color:var(--primary);">Daftar Mata Kuliah Semester Ini</h3>
                 <div id="matkulList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;"></div>
+            </div>
+
+            <div id="view-profile" class="view-section hidden fade-in">
+                <div style="max-width: 600px; margin: 0 auto;">
+                    <div class="profile-header">
+                        <div class="profile-avatar" id="profileInitial">A</div>
+                        <div>
+                            <h2 style="font-size:1.5rem;" id="profileName">Nama Mahasiswa</h2>
+                            <p style="opacity:0.9;">Mahasiswa Aktif - Informatika</p>
+                        </div>
+                    </div>
+                    <div class="profile-body">
+                        <div class="profile-row">
+                            <span class="profile-label">Nomor Pokok Mahasiswa (NPM)</span>
+                            <span class="profile-value" id="profileNpm">-</span>
+                        </div>
+                        <div class="profile-row">
+                            <span class="profile-label">Email Akademik</span>
+                            <span class="profile-value" id="profileEmail">-</span>
+                        </div>
+                        <div class="profile-row">
+                            <span class="profile-label">Semester Saat Ini</span>
+                            <span class="profile-value" id="profileSem">-</span>
+                        </div>
+                        <div class="profile-row">
+                            <span class="profile-label">Program Studi</span>
+                            <span class="profile-value">S1 - Informatika</span>
+                        </div>
+                        <div class="profile-row">
+                            <span class="profile-label">Fakultas</span>
+                            <span class="profile-value">Ilmu Komputer</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
         </main>
