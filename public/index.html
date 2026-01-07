@@ -155,11 +155,12 @@
         .actions button:hover { color: var(--accent); transform: scale(1.1); }
         .actions button.btn-del:hover { color: var(--danger); }
 
-        /* Animations */
+        /* Animations & Utilities */
         @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* Utility */
-        .hidden { display: none; }
+        .hidden { display: none !important; }
+        .view-section { animation: slideIn 0.3s ease-out; }
+
         .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid var(--accent); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
@@ -261,71 +262,87 @@
             <div class="header-dash">
                 <div class="welcome-text">
                     <h1 id="welcomeMsg">Halo, Mahasiswa! 👋</h1>
-                    <p style="color: var(--text-gray);">Berikut adalah daftar tugas akademik Anda hari ini.</p>
+                    <p id="pageDesc" style="color: var(--text-gray);">Kelola aktivitas akademikmu.</p>
                 </div>
                 <button onclick="logout()" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
             </div>
 
-            <div class="grid-container">
-                <div class="card">
-                    <div class="card-header">
-                        <span><i class="fas fa-plus-circle"></i> Tambah Tugas</span>
+            <div id="view-dashboard" class="view-section">
+                <div class="grid-container">
+                    <div class="card">
+                        <div class="card-header">
+                            <span><i class="fas fa-plus-circle"></i> Tambah Tugas</span>
+                        </div>
+                        <form id="taskForm">
+                            <input type="hidden" id="taskId">
+                            <div class="input-group">
+                                <input type="text" id="judul" placeholder="Judul Tugas (Misal: Laporan Praktikum)" required>
+                            </div>
+                            <div class="input-group">
+                                <select id="matkulSelect" required>
+                                    <option value="">-- Loading Mata Kuliah --</option>
+                                </select>
+                                <small style="display:block; margin-top:5px; color:#64748b; font-size:0.8rem;">
+                                    * Mata kuliah belum ada? <a href="#" onclick="switchView('matkul')" style="color:var(--accent);">Tambah di sini</a>
+                                </small>
+                            </div>
+                            <div class="input-group">
+                                <input type="date" id="deadline" required>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <div class="input-group">
+                                    <select id="prioritas">
+                                        <option value="Rendah">Low</option>
+                                        <option value="Sedang" selected>Medium</option>
+                                        <option value="Tinggi">High</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <select id="status">
+                                        <option value="Belum Dikerjakan">To Do</option>
+                                        <option value="Sedang Dikerjakan">In Progress</option>
+                                        <option value="Selesai">Done</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-auth" id="btnSaveTask">SIMPAN TUGAS</button>
+                            <button type="button" onclick="resetForm()" class="btn-auth" id="btnCancel" style="background: #94a3b8; margin-top: 10px; display: none;">Batal</button>
+                        </form>
                     </div>
-                    <form id="taskForm">
-                        <input type="hidden" id="taskId">
-                        
-                        <div class="input-group">
-                            <input type="text" id="judul" placeholder="Judul Tugas (Misal: Laporan Praktikum)" required>
-                        </div>
-                        
-                        <div class="input-group">
-                            <select id="matkulSelect" required>
-                                <option value="">-- Pilih Mata Kuliah --</option>
-                            </select>
-                        </div>
 
-                        <div class="input-group">
-                            <label style="font-size:0.8rem; color:#64748b; margin-bottom:5px; display:block;">Deadline</label>
-                            <input type="date" id="deadline" required style="padding-left:12px;">
+                    <div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                            <h3 style="color:var(--secondary);">Daftar Tugas</h3>
+                            <span id="taskCount" class="badge bg-prio-Sedang">0</span>
                         </div>
+                        <ul id="taskList" class="task-list"></ul>
+                    </div>
+                </div>
+            </div>
 
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <div class="input-group">
-                                <select id="prioritas">
-                                    <option value="Rendah">Low</option>
-                                    <option value="Sedang" selected>Medium</option>
-                                    <option value="Tinggi">High</option>
-                                </select>
-                            </div>
-                            <div class="input-group">
-                                <select id="status">
-                                    <option value="Belum Dikerjakan">To Do</option>
-                                    <option value="Sedang Dikerjakan">In Progress</option>
-                                    <option value="Selesai">Done</option>
-                                </select>
-                            </div>
+            <div id="view-matkul" class="view-section hidden">
+                <div class="card" style="margin-bottom: 30px;">
+                    <div class="card-header"><i class="fas fa-university"></i> Input Kartu Rencana Studi (KRS)</div>
+                    <form id="matkulForm" style="display: grid; grid-template-columns: 1fr 2fr 1fr auto; gap: 15px; align-items: end;">
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label style="font-size:0.8rem; margin-bottom:5px; display:block;">Kode</label>
+                            <input type="text" id="mkKode" placeholder="IF101" required>
                         </div>
-
-                        <button type="submit" class="btn-auth" id="btnSaveTask">
-                            <i class="fas fa-save"></i> SIMPAN TUGAS
-                        </button>
-                        <button type="button" onclick="resetForm()" class="btn-auth" id="btnCancel" style="background: #94a3b8; margin-top: 10px; display: none;">Batal</button>
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label style="font-size:0.8rem; margin-bottom:5px; display:block;">Nama Mata Kuliah</label>
+                            <input type="text" id="mkNama" placeholder="Contoh: Algoritma Pemrograman" required>
+                        </div>
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label style="font-size:0.8rem; margin-bottom:5px; display:block;">Dosen</label>
+                            <input type="text" id="mkDosen" placeholder="Nama Dosen">
+                        </div>
+                        <button type="submit" class="btn-auth" style="height: 42px; margin-bottom: 1px;"><i class="fas fa-plus"></i> Tambah</button>
                     </form>
                 </div>
 
-                <div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                        <h3 style="color:var(--secondary);">Daftar Tugas Saya</h3>
-                        <span id="taskCount" style="background:var(--accent); color:white; padding:2px 8px; border-radius:10px; font-size:0.8rem;">0</span>
+                <h3 style="margin-bottom: 20px;">Mata Kuliah Diambil Semester Ini</h3>
+                <div id="matkulList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
                     </div>
-                    
-                    <ul id="taskList" class="task-list">
-                        <div style="text-align:center; margin-top:50px; color:#cbd5e1;">
-                            <i class="fas fa-clipboard-list" style="font-size:3rem; margin-bottom:10px;"></i>
-                            <p>Memuat data...</p>
-                        </div>
-                    </ul>
-                </div>
             </div>
         </main>
     </div>

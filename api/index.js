@@ -6,155 +6,131 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 1. KONEKSI DATABASE
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log("✅ Database Connected"))
   .catch(err => console.error("❌ Database Error:", err));
 
-// 2. SCHEMA DATABASE (3 Tabel Utama)
+// --- SCHEMA DATABASE ---
 
-// A. Tabel Pengguna (User)
 const penggunaSchema = new mongoose.Schema({
   nama_lengkap: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  kata_sandi: { type: String, required: true }, // Simple text for demo (Gunakan bcrypt di real app)
+  kata_sandi: { type: String, required: true },
   nim: String,
   jurusan: String,
   semester: Number,
-  tanggal_daftar: { type: Date, default: Date.now },
   dihapus_pada: { type: Date, default: null }
 });
 const Pengguna = mongoose.model('Pengguna', penggunaSchema);
 
-// B. Tabel Mata Kuliah (Course)
+// UPDATE: Mata Kuliah sekarang punya relasi ke Pengguna
 const mataKuliahSchema = new mongoose.Schema({
+  id_pengguna: { type: mongoose.Schema.Types.ObjectId, ref: 'Pengguna', required: true },
   kode_mata_kuliah: String,
-  nama_mata_kuliah: String,
+  nama_mata_kuliah: { type: String, required: true },
   dosen_pengampu: String,
-  semester: Number,
+  hari_jadwal: String,
   dihapus_pada: { type: Date, default: null }
 });
 const MataKuliah = mongoose.model('MataKuliah', mataKuliahSchema);
 
-// C. Tabel Tugas (Task) - RELASI UTAMA
 const tugasSchema = new mongoose.Schema({
   id_pengguna: { type: mongoose.Schema.Types.ObjectId, ref: 'Pengguna', required: true },
   id_mata_kuliah: { type: mongoose.Schema.Types.ObjectId, ref: 'MataKuliah', required: true },
   judul_tugas: { type: String, required: true },
-  deskripsi_tugas: String,
   tenggat_waktu: { type: Date, required: true },
-  status_tugas: { type: String, enum: ['Belum Dikerjakan', 'Sedang Dikerjakan', 'Selesai'], default: 'Belum Dikerjakan' },
-  prioritas: { type: String, enum: ['Rendah', 'Sedang', 'Tinggi'], default: 'Sedang' },
-  tanggal_dibuat: { type: Date, default: Date.now },
-  tanggal_diperbarui: { type: Date, default: Date.now },
+  status_tugas: { type: String, default: 'Belum Dikerjakan' },
+  prioritas: { type: String, default: 'Sedang' },
   dihapus_pada: { type: Date, default: null }
 });
 const Tugas = mongoose.model('Tugas', tugasSchema);
 
-// 3. AUTHENTICATION ROUTES
+// --- ROUTES ---
 
-// Register
+// AUTH
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { email } = req.body;
-    const existingUser = await Pengguna.findOne({ email });
-    if (existingUser) return res.status(400).json({ error: "Email sudah terdaftar!" });
-
-    const newUser = new Pengguna(req.body);
-    await newUser.save();
-    res.json(newUser);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+    const existing = await Pengguna.findOne({ email });
+    if (existing) return res.status(400).json({ error: "Email sudah terdaftar" });
+    const user = new Pengguna(req.body);
+    await user.save();
+    res.json(user);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Login
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, kata_sandi } = req.body;
-    // Cari user aktif (tidak dihapus)
-    const user = await Pengguna.findOne({ email, dihapus_pada: null });
-    
-    if (!user || user.kata_sandi !== kata_sandi) {
-      return res.status(401).json({ error: "Email atau Password salah!" });
-    }
+    const user = await Pengguna.findOne({ email, kata_sandi, dihapus_pada: null });
+    if (!user) return res.status(401).json({ error: "Email/Password salah" });
     res.json(user);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// 4. DATA ROUTES
+// --- CRUD MATA KULIAH (User Specific) ---
 
-// Get Mata Kuliah (Auto Seed if Empty)
+// GET Matkul User
 app.get('/api/mata-kuliah', async (req, res) => {
-  let courses = await MataKuliah.find({ dihapus_pada: null });
-  
-  // Auto-seed jika kosong (untuk kemudahan demo)
-  if (courses.length === 0) {
-    const seeds = [
-      { kode_mata_kuliah: "IF201", nama_mata_kuliah: "Pemrograman Web Lanjut", dosen_pengampu: "Dr. Budi Santoso", semester: 4 },
-      { kode_mata_kuliah: "IF202", nama_mata_kuliah: "Basis Data II", dosen_pengampu: "Prof. Siti Aminah", semester: 4 },
-      { kode_mata_kuliah: "IF203", nama_mata_kuliah: "Kecerdasan Buatan", dosen_pengampu: "Dr. Rahmat", semester: 4 },
-      { kode_mata_kuliah: "IF204", nama_mata_kuliah: "Jaringan Komputer", dosen_pengampu: "Ir. Joko", semester: 4 }
-    ];
-    await MataKuliah.insertMany(seeds);
-    courses = await MataKuliah.find({ dihapus_pada: null });
-  }
-  res.json(courses);
+  try {
+    const { userId } = req.query;
+    if (!userId) return res.status(400).json({ error: "User ID wajib" });
+    const courses = await MataKuliah.find({ id_pengguna: userId, dihapus_pada: null });
+    res.json(courses);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- CRUD TUGAS (User Specific) ---
+// POST Matkul Baru
+app.post('/api/mata-kuliah', async (req, res) => {
+  try {
+    const newCourse = new MataKuliah(req.body);
+    await newCourse.save();
+    res.json(newCourse);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 
-// GET Tugas (Filtered by User ID)
+// DELETE Matkul
+app.delete('/api/mata-kuliah/:id', async (req, res) => {
+  try {
+    await MataKuliah.findByIdAndUpdate(req.params.id, { dihapus_pada: new Date() });
+    res.json({ message: "Dihapus" });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// --- CRUD TUGAS ---
+
 app.get('/api/tugas', async (req, res) => {
   try {
-    const { userId } = req.query; // Ambil ID User dari query params
-    if (!userId) return res.status(400).json({ error: "User ID diperlukan" });
-
+    const { userId } = req.query;
     const tasks = await Tugas.find({ id_pengguna: userId, dihapus_pada: null })
       .populate('id_mata_kuliah')
       .sort({ tenggat_waktu: 1 });
     res.json(tasks);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST Tugas
 app.post('/api/tugas', async (req, res) => {
   try {
-    const newTask = new Tugas(req.body);
-    await newTask.save();
-    res.json(newTask);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+    const task = new Tugas(req.body);
+    await task.save();
+    res.json(task);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// PUT Tugas
 app.put('/api/tugas/:id', async (req, res) => {
   try {
-    req.body.tanggal_diperbarui = new Date();
-    const updatedTask = await Tugas.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json(updatedTask);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+    const updated = await Tugas.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(updated);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// DELETE Tugas (Soft Delete)
 app.delete('/api/tugas/:id', async (req, res) => {
   try {
-    // Soft delete: update field dihapus_pada
     await Tugas.findByIdAndUpdate(req.params.id, { dihapus_pada: new Date() });
-    res.json({ message: "Berhasil dihapus" });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+    res.json({ message: "Deleted" });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Server Init
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
