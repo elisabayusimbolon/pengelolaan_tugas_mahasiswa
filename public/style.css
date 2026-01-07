@@ -1,0 +1,92 @@
+:root {
+    --primary: #2563eb;
+    --bg: #f3f4f6;
+    --card-bg: #ffffff;
+    --text: #1f2937;
+    --danger: #ef4444;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.card {
+    background: var(--card-bg);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+h2 { margin-top: 0; font-size: 1.2rem; }
+
+.form-group { margin-bottom: 15px; }
+.row { display: flex; gap: 15px; }
+.row .form-group { flex: 1; }
+
+label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; }
+input, select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    box-sizing: border-box; /* Penting agar padding tidak melebar */
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    width: 100%;
+    padding: 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+}
+.btn-primary:hover { opacity: 0.9; }
+
+/* List Tugas */
+.task-list { list-style: none; padding: 0; }
+.task-item {
+    border-bottom: 1px solid #eee;
+    padding: 15px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.task-info h3 { margin: 0 0 5px 0; font-size: 1rem; }
+.task-meta { font-size: 0.85rem; color: #6b7280; }
+
+.badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+.badge-Tinggi { background: #fee2e2; color: #991b1b; }
+.badge-Sedang { background: #fef3c7; color: #92400e; }
+.badge-Rendah { background: #d1fae5; color: #065f46; }
+
+.btn-delete {
+    background: transparent;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 10px;
+}
