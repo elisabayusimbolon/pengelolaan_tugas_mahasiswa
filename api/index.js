@@ -6,9 +6,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// GANTI STRING INI DENGAN CONNECTION STRING MONGODB ATLAS ANDA SENDIRI
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log("✅ Database Connected"))
-  .catch(err => console.error("❌ Database Error:", err));
+  .then(() => console.log("✅ Database Terhubung"))
+  .catch(err => console.error("❌ Gagal Terhubung Database:", err));
 
 // --- SCHEMA DATABASE ---
 
@@ -23,24 +24,26 @@ const penggunaSchema = new mongoose.Schema({
 });
 const Pengguna = mongoose.model('Pengguna', penggunaSchema);
 
-// UPDATE: Mata Kuliah sekarang punya relasi ke Pengguna
 const mataKuliahSchema = new mongoose.Schema({
   id_pengguna: { type: mongoose.Schema.Types.ObjectId, ref: 'Pengguna', required: true },
   kode_mata_kuliah: String,
   nama_mata_kuliah: { type: String, required: true },
   dosen_pengampu: String,
-  hari_jadwal: String,
   dihapus_pada: { type: Date, default: null }
 });
 const MataKuliah = mongoose.model('MataKuliah', mataKuliahSchema);
 
+// UPDATE: Penambahan Field Baru pada Tugas
 const tugasSchema = new mongoose.Schema({
   id_pengguna: { type: mongoose.Schema.Types.ObjectId, ref: 'Pengguna', required: true },
   id_mata_kuliah: { type: mongoose.Schema.Types.ObjectId, ref: 'MataKuliah', required: true },
   judul_tugas: { type: String, required: true },
+  deskripsi_tugas: { type: String }, // Baru
+  jenis_tugas: { type: String, required: true }, // Baru (Individu, Kelompok, Ujian, dll)
   tenggat_waktu: { type: Date, required: true },
-  status_tugas: { type: String, default: 'Belum Dikerjakan' },
   prioritas: { type: String, default: 'Sedang' },
+  status_tugas: { type: String, default: 'Belum Dikerjakan' },
+  catatan_pribadi: { type: String }, // Baru
   dihapus_pada: { type: Date, default: null }
 });
 const Tugas = mongoose.model('Tugas', tugasSchema);
@@ -56,31 +59,28 @@ app.post('/api/auth/register', async (req, res) => {
     const user = new Pengguna(req.body);
     await user.save();
     res.json(user);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: "Gagal Registrasi: " + e.message }); }
 });
 
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, kata_sandi } = req.body;
     const user = await Pengguna.findOne({ email, kata_sandi, dihapus_pada: null });
-    if (!user) return res.status(401).json({ error: "Email/Password salah" });
+    if (!user) return res.status(401).json({ error: "Email atau Kata Sandi salah" });
     res.json(user);
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  } catch (e) { res.status(500).json({ error: "Gagal Login: " + e.message }); }
 });
 
-// --- CRUD MATA KULIAH (User Specific) ---
-
-// GET Matkul User
+// MATA KULIAH
 app.get('/api/mata-kuliah', async (req, res) => {
   try {
     const { userId } = req.query;
-    if (!userId) return res.status(400).json({ error: "User ID wajib" });
+    if (!userId) return res.status(400).json({ error: "ID Pengguna wajib disertakan" });
     const courses = await MataKuliah.find({ id_pengguna: userId, dihapus_pada: null });
     res.json(courses);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// POST Matkul Baru
 app.post('/api/mata-kuliah', async (req, res) => {
   try {
     const newCourse = new MataKuliah(req.body);
@@ -89,16 +89,14 @@ app.post('/api/mata-kuliah', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// DELETE Matkul
 app.delete('/api/mata-kuliah/:id', async (req, res) => {
   try {
     await MataKuliah.findByIdAndUpdate(req.params.id, { dihapus_pada: new Date() });
-    res.json({ message: "Dihapus" });
+    res.json({ message: "Berhasil dihapus" });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// --- CRUD TUGAS ---
-
+// TUGAS
 app.get('/api/tugas', async (req, res) => {
   try {
     const { userId } = req.query;
@@ -127,11 +125,11 @@ app.put('/api/tugas/:id', async (req, res) => {
 app.delete('/api/tugas/:id', async (req, res) => {
   try {
     await Tugas.findByIdAndUpdate(req.params.id, { dihapus_pada: new Date() });
-    res.json({ message: "Deleted" });
+    res.json({ message: "Berhasil dihapus" });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server berjalan di port ${PORT}`));
 
 module.exports = app;

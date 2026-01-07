@@ -3,21 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Task Manager - Informatika</title>
+    <title>Manajer Tugas Mahasiswa - Informatika</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
     <style>
         :root {
             /* Palette Warna Informatika */
-            --primary: #0f172a;    /* Navy Blue Gelap */
-            --secondary: #1e293b;  /* Sidebar Color */
-            --accent: #3b82f6;     /* Biru Teknologi */
+            --primary: #0f172a;    
+            --secondary: #1e293b;  
+            --accent: #3b82f6;     
             --accent-hover: #2563eb;
             --bg-light: #f1f5f9;
             --text-dark: #1e293b;
             --text-gray: #64748b;
-            --white: #ffffff;
             
             /* Status Colors */
             --success: #10b981;
@@ -28,322 +27,246 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
         body { background-color: var(--bg-light); color: var(--text-dark); height: 100vh; overflow: hidden; }
 
-        /* --- 1. LOGIN & REGISTER PAGE (Split Screen) --- */
-        #auth-section { display: flex; height: 100vh; width: 100%; transition: opacity 0.3s; }
-        .auth-hidden { display: none !important; }
+        /* --- UTILS --- */
+        .hidden { display: none !important; }
+        .view-section { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .auth-left {
-            flex: 1;
-            background: linear-gradient(135deg, var(--primary), #1e1b4b);
-            color: white;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 60px;
-            position: relative;
-            overflow: hidden;
+        /* --- TOAST NOTIFICATION --- */
+        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; }
+        .toast {
+            background: white; padding: 15px 20px; border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-top: 10px;
+            display: flex; align-items: center; gap: 12px;
+            border-left: 5px solid var(--accent);
+            animation: slideInToast 0.3s ease-out; min-width: 300px;
         }
-        .auth-left::before {
-            content: "";
-            position: absolute;
-            width: 300px; height: 300px;
-            background: rgba(59, 130, 246, 0.2);
-            border-radius: 50%;
-            top: -50px; left: -50px;
-        }
+        .toast.success { border-left-color: var(--success); }
+        .toast.error { border-left-color: var(--danger); }
+        .toast-title { font-weight: 600; font-size: 0.95rem; }
+        .toast-msg { font-size: 0.85rem; color: var(--text-gray); }
+        @keyframes slideInToast { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-        .auth-right {
-            flex: 1;
-            background: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-        }
+        /* --- LAYOUT UTAMA --- */
+        #auth-section { display: flex; height: 100vh; width: 100%; }
+        .auth-left { flex: 1; background: linear-gradient(135deg, var(--primary), #1e1b4b); color: white; display: flex; flex-direction: column; justify-content: center; padding: 60px; }
+        .auth-right { flex: 1; background: white; display: flex; align-items: center; justify-content: center; padding: 40px; }
+        .auth-card { width: 100%; max-width: 400px; }
 
-        .auth-card {
-            width: 100%; max-width: 400px;
-            animation: slideIn 0.5s ease-out;
-        }
-
-        h2 { font-weight: 700; margin-bottom: 10px; color: var(--primary); }
-        .subtitle { color: var(--text-gray); margin-bottom: 30px; font-size: 0.9rem; }
-
-        .input-group { margin-bottom: 20px; position: relative; }
-        .input-group i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-gray); }
-        .input-group input, .input-group select {
-            width: 100%; padding: 12px 12px 12px 45px;
-            border: 1px solid #e2e8f0; border-radius: 8px;
-            font-size: 14px; transition: 0.3s;
-        }
-        .input-group input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
-
-        .btn-auth {
-            width: 100%; padding: 12px; background: var(--accent); color: white;
-            border: none; border-radius: 8px; font-weight: 600; cursor: pointer;
-            transition: 0.2s;
-        }
-        .btn-auth:hover { background: var(--accent-hover); transform: translateY(-1px); }
-
-        .switch-auth { text-align: center; margin-top: 20px; font-size: 0.9rem; }
-        .switch-auth a { color: var(--accent); text-decoration: none; font-weight: 600; cursor: pointer; }
-
-        /* --- 2. DASHBOARD (Sidebar + Content) --- */
         #dashboard-section { display: none; height: 100vh; display: flex; }
         .dashboard-active { display: flex !important; }
 
-        /* Sidebar */
-        .sidebar {
-            width: 260px; background: var(--primary); color: white;
-            display: flex; flex-direction: column; padding: 20px;
-            transition: 0.3s;
-        }
-        .brand { font-size: 1.2rem; font-weight: 700; margin-bottom: 40px; display: flex; align-items: center; gap: 10px; }
-        .nav-item {
-            padding: 12px 15px; margin-bottom: 5px; border-radius: 8px;
-            cursor: pointer; display: flex; align-items: center; gap: 10px;
-            color: #cbd5e1; transition: 0.2s;
-        }
-        .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.1); color: white; }
-        .user-profile-mini {
-            margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);
-            display: flex; align-items: center; gap: 10px;
-        }
-        .avatar { width: 40px; height: 40px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .sidebar { width: 260px; background: var(--primary); color: white; display: flex; flex-direction: column; padding: 20px; }
+        .nav-item { padding: 12px 15px; margin-bottom: 5px; border-radius: 8px; cursor: pointer; color: #cbd5e1; display: flex; gap: 10px; align-items: center; }
+        .nav-item.active, .nav-item:hover { background: rgba(255,255,255,0.1); color: white; }
 
-        /* Main Content */
         .main-content { flex: 1; overflow-y: auto; padding: 30px; background: var(--bg-light); }
-        
         .header-dash { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .welcome-text h1 { font-size: 1.8rem; color: var(--primary); }
-        .btn-logout { background: transparent; border: 1px solid #cbd5e1; padding: 8px 15px; border-radius: 6px; cursor: pointer; color: var(--text-gray); }
-        .btn-logout:hover { background: #fee2e2; color: var(--danger); border-color: var(--danger); }
 
-        /* Cards & Grid */
-        .grid-container { display: grid; grid-template-columns: 350px 1fr; gap: 30px; }
-        @media (max-width: 1000px) { .grid-container { grid-template-columns: 1fr; } }
-
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); margin-bottom: 20px; }
-        .card-header { font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; color: var(--secondary); display: flex; justify-content: space-between; }
-
-        /* Task List Styling */
-        .task-list { list-style: none; }
-        .task-card {
-            background: white; border: 1px solid #e2e8f0; border-radius: 10px;
-            padding: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;
-            transition: all 0.2s; position: relative; overflow: hidden;
-        }
-        .task-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); border-color: var(--accent); }
+        /* --- FORM STYLING --- */
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .card-header { font-size: 1.1rem; font-weight: 600; margin-bottom: 20px; color: var(--secondary); border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
         
-        /* Status Indicators */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-full { grid-column: 1 / -1; }
+        
+        .input-group label { display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-dark); margin-bottom: 6px; }
+        .input-group input, .input-group select, .input-group textarea {
+            width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; transition: 0.2s;
+        }
+        .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
+            border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .input-group textarea { resize: vertical; min-height: 80px; }
+
+        .btn-auth { width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .btn-auth:hover { background: var(--accent-hover); }
+        .btn-auth:disabled { background: #94a3b8; cursor: not-allowed; }
+
+        /* --- TASK LIST --- */
+        .task-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
         .task-card.status-Belum { border-left: 4px solid var(--danger); }
         .task-card.status-Sedang { border-left: 4px solid var(--warning); }
         .task-card.status-Selesai { border-left: 4px solid var(--success); }
-
-        .task-info h4 { font-size: 1rem; color: var(--text-dark); margin-bottom: 5px; }
-        .task-meta { font-size: 0.8rem; color: var(--text-gray); display: flex; gap: 10px; align-items: center; }
         
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
-        .bg-matkul { background: #e0f2fe; color: #0369a1; }
-        .bg-prio-Tinggi { background: #fee2e2; color: #991b1b; }
-        .bg-prio-Sedang { background: #fef3c7; color: #92400e; }
-        .bg-prio-Rendah { background: #dcfce7; color: #166534; }
-
-        .actions button {
-            background: none; border: none; cursor: pointer; padding: 5px; color: var(--text-gray); transition: 0.2s;
-        }
-        .actions button:hover { color: var(--accent); transform: scale(1.1); }
-        .actions button.btn-del:hover { color: var(--danger); }
-
-        /* Animations & Utilities */
-        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .hidden { display: none !important; }
-        .view-section { animation: slideIn 0.3s ease-out; }
-
-        .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid var(--accent); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: inline-block; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .badge { padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; margin-right: 5px; }
+        .bg-blue { background: #e0f2fe; color: #0369a1; }
+        .bg-gray { background: #f1f5f9; color: #475569; }
 
     </style>
 </head>
 <body>
 
+    <div id="toast-container"></div>
+
     <div id="auth-section">
         <div class="auth-left">
-            <h1>Student Task Manager</h1>
-            <p style="margin-top: 10px; opacity: 0.8; line-height: 1.6;">
-                Kelola tugas akademik program studi Informatika dengan lebih terstruktur, modern, dan efisien.
-            </p>
-            <div style="margin-top: 40px; display: flex; gap: 20px;">
-                <div><i class="fas fa-check-circle"></i> Manajemen Tugas</div>
-                <div><i class="fas fa-database"></i> Terintegrasi</div>
-            </div>
+            <h1>Manajer Tugas Mahasiswa</h1>
+            <p style="margin-top: 10px; opacity: 0.9;">Kelola jadwal akademik Informatika Anda dengan terstruktur.</p>
         </div>
-        
         <div class="auth-right">
             <div class="auth-card" id="loginCard">
-                <h2>Selamat Datang</h2>
-                <p class="subtitle">Silakan login dengan akun mahasiswa Anda.</p>
+                <h2>Masuk Akun</h2>
                 <form id="loginForm">
-                    <div class="input-group">
-                        <i class="fas fa-envelope"></i>
+                    <div class="input-group" style="margin-bottom: 15px;">
                         <input type="email" id="loginEmail" placeholder="Email Mahasiswa" required>
                     </div>
-                    <div class="input-group">
-                        <i class="fas fa-lock"></i>
+                    <div class="input-group" style="margin-bottom: 20px;">
                         <input type="password" id="loginPass" placeholder="Kata Sandi" required>
                     </div>
-                    <button type="submit" class="btn-auth">MASUK <i class="fas fa-arrow-right" style="margin-left:5px;"></i></button>
+                    <button type="submit" class="btn-auth">MASUK</button>
                 </form>
-                <div class="switch-auth">
-                    Belum punya akun? <a onclick="toggleAuth('register')">Daftar Sekarang</a>
-                </div>
+                <p style="text-align:center; margin-top:20px; font-size:0.9rem;">
+                    Belum punya akun? <a href="#" onclick="toggleAuth('register')" style="color:var(--accent);">Daftar</a>
+                </p>
             </div>
 
             <div class="auth-card hidden" id="registerCard">
                 <h2>Buat Akun Baru</h2>
-                <p class="subtitle">Bergabung dengan komunitas Informatika.</p>
                 <form id="registerForm">
-                    <div class="input-group">
-                        <i class="fas fa-user"></i>
-                        <input type="text" id="regName" placeholder="Nama Lengkap" required>
-                    </div>
-                    <div class="input-group">
-                        <i class="fas fa-id-card"></i>
-                        <input type="text" id="regNim" placeholder="NIM" required>
-                    </div>
-                    <div class="input-group">
-                        <i class="fas fa-envelope"></i>
-                        <input type="email" id="regEmail" placeholder="Email" required>
-                    </div>
-                    <div class="input-group">
-                        <i class="fas fa-lock"></i>
-                        <input type="password" id="regPass" placeholder="Kata Sandi" required>
-                    </div>
-                    <div style="display: flex; gap: 10px;">
-                        <div class="input-group">
-                            <i class="fas fa-graduation-cap"></i>
-                            <input type="text" value="Informatika" readonly style="background: #f8fafc;">
-                        </div>
-                        <div class="input-group">
-                            <i class="fas fa-layer-group"></i>
-                            <input type="number" id="regSem" placeholder="Sem" min="1" max="14" required>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn-auth">DAFTAR AKUN</button>
+                    <div class="input-group" style="margin-bottom:10px;"><input type="text" id="regName" placeholder="Nama Lengkap" required></div>
+                    <div class="input-group" style="margin-bottom:10px;"><input type="text" id="regNim" placeholder="NIM" required></div>
+                    <div class="input-group" style="margin-bottom:10px;"><input type="email" id="regEmail" placeholder="Email" required></div>
+                    <div class="input-group" style="margin-bottom:10px;"><input type="password" id="regPass" placeholder="Kata Sandi" required></div>
+                    <div class="input-group" style="margin-bottom:20px;"><input type="number" id="regSem" placeholder="Semester" required></div>
+                    <button type="submit" class="btn-auth">DAFTAR SEKARANG</button>
                 </form>
-                <div class="switch-auth">
-                    Sudah punya akun? <a onclick="toggleAuth('login')">Login di sini</a>
-                </div>
+                <p style="text-align:center; margin-top:20px; font-size:0.9rem;">
+                    Sudah punya akun? <a href="#" onclick="toggleAuth('login')" style="color:var(--accent);">Login</a>
+                </p>
             </div>
         </div>
     </div>
 
     <div id="dashboard-section">
         <aside class="sidebar">
-            <div class="brand">
-                <i class="fas fa-laptop-code"></i> INFORMATIKA
-            </div>
+            <h2 style="margin-bottom:30px;"><i class="fas fa-code"></i> INFORMATIKA</h2>
             <nav>
                 <div class="nav-item active"><i class="fas fa-th-large"></i> Dashboard</div>
                 <div class="nav-item"><i class="fas fa-book"></i> Mata Kuliah</div>
-                <div class="nav-item"><i class="fas fa-chart-pie"></i> Statistik</div>
             </nav>
-            <div class="user-profile-mini">
-                <div class="avatar" id="navAvatar">MH</div>
-                <div style="font-size: 0.9rem;">
-                    <div id="navName" style="font-weight: 600;">Mahasiswa</div>
-                    <div id="navNim" style="opacity: 0.7; font-size: 0.8rem;">12345678</div>
-                </div>
+            <div style="margin-top:auto; padding-top:20px; border-top:1px solid rgba(255,255,255,0.1);">
+                <small>Masuk sebagai:</small>
+                <div id="navName" style="font-weight:600;">Mahasiswa</div>
             </div>
         </aside>
 
         <main class="main-content">
             <div class="header-dash">
-                <div class="welcome-text">
-                    <h1 id="welcomeMsg">Halo, Mahasiswa! 👋</h1>
-                    <p id="pageDesc" style="color: var(--text-gray);">Kelola aktivitas akademikmu.</p>
+                <div>
+                    <h1 id="welcomeMsg">Halo! 👋</h1>
+                    <p style="color:var(--text-gray);">Selamat datang di dashboard akademik Anda.</p>
                 </div>
-                <button onclick="logout()" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                <button onclick="logout()" class="btn-auth" style="background:white; color:var(--danger); border:1px solid #e2e8f0; width:auto;">
+                    <i class="fas fa-sign-out-alt"></i> Keluar
+                </button>
             </div>
 
             <div id="view-dashboard" class="view-section">
-                <div class="grid-container">
-                    <div class="card">
-                        <div class="card-header">
-                            <span><i class="fas fa-plus-circle"></i> Tambah Tugas</span>
-                        </div>
-                        <form id="taskForm">
-                            <input type="hidden" id="taskId">
-                            <div class="input-group">
-                                <input type="text" id="judul" placeholder="Judul Tugas (Misal: Laporan Praktikum)" required>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-plus-circle"></i> Form Tambah Tugas Baru
+                    </div>
+                    <form id="taskForm">
+                        <input type="hidden" id="taskId">
+                        
+                        <div class="form-grid">
+                            <div class="input-group form-full">
+                                <label>Judul Tugas <span style="color:red">*</span></label>
+                                <input type="text" id="judul" placeholder="Contoh: Laporan Akhir Praktikum Pemrograman Web" required>
                             </div>
+
+                            <div class="input-group form-full">
+                                <label>Deskripsi Tugas</label>
+                                <textarea id="deskripsi" placeholder="Tuliskan detail instruksi tugas di sini..."></textarea>
+                            </div>
+
                             <div class="input-group">
+                                <label>Mata Kuliah <span style="color:red">*</span></label>
                                 <select id="matkulSelect" required>
-                                    <option value="">-- Loading Mata Kuliah --</option>
+                                    <option value="">-- Memuat Data --</option>
                                 </select>
-                                <small style="display:block; margin-top:5px; color:#64748b; font-size:0.8rem;">
-                                    * Mata kuliah belum ada? <a href="#" onclick="switchView('matkul')" style="color:var(--accent);">Tambah di sini</a>
+                                <small style="display:block; margin-top:5px; color:#64748b; font-size:0.75rem;">
+                                    Tidak ada di list? <a href="#" onclick="switchView('matkul')" style="color:var(--accent);">Tambah Mata Kuliah</a>
                                 </small>
                             </div>
+
                             <div class="input-group">
+                                <label>Jenis Tugas <span style="color:red">*</span></label>
+                                <select id="jenisTugas" required>
+                                    <option value="" disabled selected>-- Pilih Jenis --</option>
+                                    <option value="Tugas Individu">Tugas Individu</option>
+                                    <option value="Tugas Kelompok">Tugas Kelompok</option>
+                                    <option value="Ujian">Ujian (UTS/UAS)</option>
+                                    <option value="Proyek">Proyek Besar</option>
+                                    <option value="Presentasi">Presentasi</option>
+                                </select>
+                            </div>
+
+                            <div class="input-group">
+                                <label>Tenggat Waktu (Deadline) <span style="color:red">*</span></label>
                                 <input type="date" id="deadline" required>
                             </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                                <div class="input-group">
-                                    <select id="prioritas">
-                                        <option value="Rendah">Low</option>
-                                        <option value="Sedang" selected>Medium</option>
-                                        <option value="Tinggi">High</option>
-                                    </select>
-                                </div>
-                                <div class="input-group">
-                                    <select id="status">
-                                        <option value="Belum Dikerjakan">To Do</option>
-                                        <option value="Sedang Dikerjakan">In Progress</option>
-                                        <option value="Selesai">Done</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn-auth" id="btnSaveTask">SIMPAN TUGAS</button>
-                            <button type="button" onclick="resetForm()" class="btn-auth" id="btnCancel" style="background: #94a3b8; margin-top: 10px; display: none;">Batal</button>
-                        </form>
-                    </div>
 
-                    <div>
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                            <h3 style="color:var(--secondary);">Daftar Tugas</h3>
-                            <span id="taskCount" class="badge bg-prio-Sedang">0</span>
+                            <div class="input-group">
+                                <label>Prioritas Tugas</label>
+                                <select id="prioritas">
+                                    <option value="Rendah">Rendah</option>
+                                    <option value="Sedang" selected>Sedang</option>
+                                    <option value="Tinggi">Tinggi</option>
+                                </select>
+                            </div>
+
+                            <div class="input-group form-full">
+                                <label>Status Pengerjaan</label>
+                                <select id="status">
+                                    <option value="Belum Dikerjakan">Belum Dikerjakan</option>
+                                    <option value="Sedang Dikerjakan">Sedang Dikerjakan</option>
+                                    <option value="Selesai">Selesai</option>
+                                </select>
+                            </div>
+
+                            <div class="input-group form-full">
+                                <label>Catatan Pribadi (Opsional)</label>
+                                <textarea id="catatan" placeholder="Catatan khusus untuk diri sendiri (misal: referensi buku, link drive, dll)" style="min-height: 60px;"></textarea>
+                            </div>
                         </div>
-                        <ul id="taskList" class="task-list"></ul>
+
+                        <div style="margin-top: 25px; display:flex; gap:10px;">
+                            <button type="submit" class="btn-auth" id="btnSaveTask">
+                                <i class="fas fa-save"></i> SIMPAN TUGAS
+                            </button>
+                            <button type="button" onclick="resetForm()" class="btn-auth" id="btnCancel" style="background: #94a3b8; display: none;">
+                                Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                        <h3>Daftar Tugas Anda</h3>
+                        <span id="taskCount" style="background:var(--accent); color:white; padding:2px 10px; border-radius:12px; font-size:0.8rem;">0</span>
                     </div>
+                    <ul id="taskList" style="list-style:none;"></ul>
                 </div>
             </div>
 
             <div id="view-matkul" class="view-section hidden">
-                <div class="card" style="margin-bottom: 30px;">
-                    <div class="card-header"><i class="fas fa-university"></i> Input Kartu Rencana Studi (KRS)</div>
-                    <form id="matkulForm" style="display: grid; grid-template-columns: 1fr 2fr 1fr auto; gap: 15px; align-items: end;">
-                        <div class="input-group" style="margin-bottom:0;">
-                            <label style="font-size:0.8rem; margin-bottom:5px; display:block;">Kode</label>
-                            <input type="text" id="mkKode" placeholder="IF101" required>
-                        </div>
-                        <div class="input-group" style="margin-bottom:0;">
-                            <label style="font-size:0.8rem; margin-bottom:5px; display:block;">Nama Mata Kuliah</label>
-                            <input type="text" id="mkNama" placeholder="Contoh: Algoritma Pemrograman" required>
-                        </div>
-                        <div class="input-group" style="margin-bottom:0;">
-                            <label style="font-size:0.8rem; margin-bottom:5px; display:block;">Dosen</label>
-                            <input type="text" id="mkDosen" placeholder="Nama Dosen">
-                        </div>
-                        <button type="submit" class="btn-auth" style="height: 42px; margin-bottom: 1px;"><i class="fas fa-plus"></i> Tambah</button>
+                <div class="card">
+                    <div class="card-header">Input Kartu Rencana Studi (KRS)</div>
+                    <form id="matkulForm" class="form-grid" style="grid-template-columns: 1fr 2fr 1fr auto; align-items:end;">
+                        <div class="input-group"><label>Kode MK</label><input type="text" id="mkKode" placeholder="IF123" required></div>
+                        <div class="input-group"><label>Nama Mata Kuliah</label><input type="text" id="mkNama" placeholder="Algoritma" required></div>
+                        <div class="input-group"><label>Dosen</label><input type="text" id="mkDosen" placeholder="Nama Dosen"></div>
+                        <button type="submit" class="btn-auth" style="height:42px; margin-bottom:1px;"><i class="fas fa-plus"></i></button>
                     </form>
                 </div>
-
-                <h3 style="margin-bottom: 20px;">Mata Kuliah Diambil Semester Ini</h3>
-                <div id="matkulList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
-                    </div>
+                <h3>Daftar Mata Kuliah Semester Ini</h3>
+                <div id="matkulList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-top:15px;"></div>
             </div>
+
         </main>
     </div>
 
