@@ -12,20 +12,17 @@ mongoose.connect(process.env.MONGODB_URI)
   .catch(err => console.error("❌ Gagal Terhubung Database:", err));
 
 // --- SCHEMA DATABASE ---
-
-// Schema Pengguna (Sesuai Final Login/Register)
 const penggunaSchema = new mongoose.Schema({
   nama_lengkap: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   kata_sandi: { type: String, required: true },
-  npm: String, // Menggunakan NPM
+  npm: String,
   jurusan: { type: String, default: 'Informatika' },
   semester: Number,
   dihapus_pada: { type: Date, default: null }
 });
 const Pengguna = mongoose.model('Pengguna', penggunaSchema);
 
-// Schema Mata Kuliah
 const mataKuliahSchema = new mongoose.Schema({
   id_pengguna: { type: mongoose.Schema.Types.ObjectId, ref: 'Pengguna', required: true },
   kode_mata_kuliah: String,
@@ -35,7 +32,6 @@ const mataKuliahSchema = new mongoose.Schema({
 });
 const MataKuliah = mongoose.model('MataKuliah', mataKuliahSchema);
 
-// Schema Tugas (Lengkap)
 const tugasSchema = new mongoose.Schema({
   id_pengguna: { type: mongoose.Schema.Types.ObjectId, ref: 'Pengguna', required: true },
   id_mata_kuliah: { type: mongoose.Schema.Types.ObjectId, ref: 'MataKuliah', required: true },
@@ -50,9 +46,9 @@ const tugasSchema = new mongoose.Schema({
 });
 const Tugas = mongoose.model('Tugas', tugasSchema);
 
-// --- ROUTES (API) ---
+// --- ROUTES ---
 
-// 1. AUTH ROUTES
+// AUTH
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { email } = req.body;
@@ -73,7 +69,7 @@ app.post('/api/auth/login', async (req, res) => {
   } catch (e) { res.status(500).json({ error: "Gagal Login: " + e.message }); }
 });
 
-// 2. MATA KULIAH ROUTES
+// MATA KULIAH
 app.get('/api/mata-kuliah', async (req, res) => {
     try {
       const { userId } = req.query;
@@ -89,6 +85,14 @@ app.post('/api/mata-kuliah', async (req, res) => {
       res.json(newCourse);
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
+
+// [BARU] UPDATE MATA KULIAH
+app.put('/api/mata-kuliah/:id', async (req, res) => {
+    try {
+      const updated = await MataKuliah.findByIdAndUpdate(req.params.id, req.body, { new: true });
+      res.json(updated);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
   
 app.delete('/api/mata-kuliah/:id', async (req, res) => {
     try {
@@ -97,7 +101,7 @@ app.delete('/api/mata-kuliah/:id', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// 3. TUGAS ROUTES
+// TUGAS
 app.get('/api/tugas', async (req, res) => {
     try {
       const { userId } = req.query;
