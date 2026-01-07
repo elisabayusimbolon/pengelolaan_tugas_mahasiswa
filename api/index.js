@@ -6,24 +6,26 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// GANTI DENGAN MONGODB URI ANDA
+// GANTI DENGAN URI MONGODB ANDA
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log("✅ Database Terhubung"))
   .catch(err => console.error("❌ Gagal Terhubung Database:", err));
 
 // --- SCHEMA DATABASE ---
 
+// Schema Pengguna (Sesuai Final Login/Register)
 const penggunaSchema = new mongoose.Schema({
   nama_lengkap: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   kata_sandi: { type: String, required: true },
-  npm: String, // Diubah dari NIM ke NPM
+  npm: String, // Menggunakan NPM
   jurusan: { type: String, default: 'Informatika' },
   semester: Number,
   dihapus_pada: { type: Date, default: null }
 });
 const Pengguna = mongoose.model('Pengguna', penggunaSchema);
 
+// Schema Mata Kuliah
 const mataKuliahSchema = new mongoose.Schema({
   id_pengguna: { type: mongoose.Schema.Types.ObjectId, ref: 'Pengguna', required: true },
   kode_mata_kuliah: String,
@@ -33,6 +35,7 @@ const mataKuliahSchema = new mongoose.Schema({
 });
 const MataKuliah = mongoose.model('MataKuliah', mataKuliahSchema);
 
+// Schema Tugas (Lengkap)
 const tugasSchema = new mongoose.Schema({
   id_pengguna: { type: mongoose.Schema.Types.ObjectId, ref: 'Pengguna', required: true },
   id_mata_kuliah: { type: mongoose.Schema.Types.ObjectId, ref: 'MataKuliah', required: true },
@@ -47,15 +50,14 @@ const tugasSchema = new mongoose.Schema({
 });
 const Tugas = mongoose.model('Tugas', tugasSchema);
 
-// --- ROUTES ---
+// --- ROUTES (API) ---
 
-// AUTH
+// 1. AUTH ROUTES
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { email } = req.body;
     const existing = await Pengguna.findOne({ email });
-    if (existing) return res.status(400).json({ error: "Email sudah terdaftar dalam sistem." });
-    
+    if (existing) return res.status(400).json({ error: "Email sudah terdaftar." });
     const user = new Pengguna(req.body);
     await user.save();
     res.json(user);
@@ -66,22 +68,15 @@ app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, kata_sandi } = req.body;
     const user = await Pengguna.findOne({ email, kata_sandi, dihapus_pada: null });
-    if (!user) return res.status(401).json({ error: "Email atau Kata Sandi tidak valid." });
+    if (!user) return res.status(401).json({ error: "Email atau Kata Sandi salah." });
     res.json(user);
   } catch (e) { res.status(500).json({ error: "Gagal Login: " + e.message }); }
 });
 
-// ... (SISA ROUTE TUGAS & MATA KULIAH TETAP SAMA SEPERTI SEBELUMNYA) ...
-// (Agar kode tidak terlalu panjang, bagian route Mata Kuliah dan Tugas tidak saya tulis ulang karena tidak berubah)
-
-// MATA KULIAH (Pastikan Anda menyalin route mata kuliah dan tugas dari kode sebelumnya di sini)
-// Jika Anda menimpa file, pastikan route GET/POST/DELETE untuk mata-kuliah dan tugas tetap ada.
-
-// --- COPY ROUTES DI BAWAH INI DARI FILE LAMA JIKA PERLU ---
+// 2. MATA KULIAH ROUTES
 app.get('/api/mata-kuliah', async (req, res) => {
     try {
       const { userId } = req.query;
-      if (!userId) return res.status(400).json({ error: "ID Pengguna wajib disertakan" });
       const courses = await MataKuliah.find({ id_pengguna: userId, dihapus_pada: null });
       res.json(courses);
     } catch (e) { res.status(500).json({ error: e.message }); }
@@ -101,8 +96,8 @@ app.delete('/api/mata-kuliah/:id', async (req, res) => {
       res.json({ message: "Berhasil dihapus" });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
-  
-  // TUGAS
+
+// 3. TUGAS ROUTES
 app.get('/api/tugas', async (req, res) => {
     try {
       const { userId } = req.query;
