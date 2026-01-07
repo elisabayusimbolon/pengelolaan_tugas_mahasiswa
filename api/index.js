@@ -1,146 +1,98 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-require('dotenv').config();
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 const app = express();
 
-// --- MIDDLEWARE ---
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-// --- KONEKSI DATABASE ---
+// --- KONEKSI DATABASE OPTIMAL UNTUK VERCEL ---
+let isConnected = false; // Track status koneksi
+
 const connectDB = async () => {
-    if (!process.env.MONGODB_URI) {
-        console.log('⚠️  PERINGATAN: Connection String belum ada di .env');
-        console.log('⚠️  (Database belum aktif, tapi Server tetap jalan)');
-        return;
-    }
-    try {
-        await mongoose.connect(process.env.MONGODB_URI);
-        console.log('✅ Terhubung ke MongoDB');
-    } catch (err) {
-        console.error('❌ Gagal koneksi MongoDB:', err);
-    }
+  if (isConnected) {
+    console.log("=> Menggunakan koneksi database yang sudah ada.");
+    return;
+  }
+
+  try {
+    const db = await mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    isConnected = db.connections[0].readyState;
+    console.log("=> Database terhubung baru.");
+  } catch (error) {
+    console.error("=> Gagal koneksi database:", error);
+    throw error; // Biar Vercel tau kalau ini error fatal
+  }
 };
-connectDB();
+// ----------------------------------------------
 
-// ==========================================
-// 1. DEFINISI SCHEMA (STRUKTUR DATA)
-// ==========================================
-
-// A. Schema Pengguna
-const PenggunaSchema = new mongoose.Schema({
-    nama_lengkap: { type: String, required: true },
-    nim: { type: String, required: true }, // unique dihapus sementara biar gak error duplikat saat testing
-    jurusan: String,
-    semester: Number,
-    dihapus_pada: { type: Date, default: null }
+// Skema & Model (User & Task)
+// Pastikan skema Anda ada disini atau di-import
+const userSchema = new mongoose.Schema({
+  username: String,
+  // ... tambahkan field lain sesuai kebutuhan
 });
-// Pakai nama collection 'users' biar sinkron sama temanmu nanti
-const Pengguna = mongoose.model('Pengguna', PenggunaSchema, 'users');
+const User = mongoose.models.User || mongoose.model('User', userSchema);
 
-// B. Schema Mata Kuliah
-const MataKuliahSchema = new mongoose.Schema({
-    kode_mata_kuliah: { type: String, required: true },
-    nama_mata_kuliah: { type: String, required: true },
-    dosen_pengampu: String,
-    dihapus_pada: { type: Date, default: null }
+const taskSchema = new mongoose.Schema({
+  title: String,
+  priority: String,
+  deadline: String,
+  userId: String
 });
-// Pakai nama collection 'courses'
-const MataKuliah = mongoose.model('MataKuliah', MataKuliahSchema, 'courses');
+const Task = mongoose.models.Task || mongoose.model('Task', taskSchema);
 
-// C. Schema Tugas
-const TugasSchema = new mongoose.Schema({
-    id_pengguna: { type: mongoose.Schema.Types.ObjectId, ref: 'Pengguna', required: true },
-    id_mata_kuliah: { type: mongoose.Schema.Types.ObjectId, ref: 'MataKuliah', required: true },
-    judul_tugas: { type: String, required: true },
-    deskripsi_tugas: String,
-    tenggat_waktu: { type: Date, required: true },
-    status_tugas: { 
-        type: String, 
-        enum: ['Belum', 'Proses', 'Selesai'], 
-        default: 'Belum' 
-    },
-    prioritas: { 
-        type: String, 
-        enum: ['Rendah', 'Sedang', 'Tinggi'], 
-        default: 'Sedang' 
-    },
-    dihapus_pada: { type: Date, default: null }
-}, { timestamps: { createdAt: 'tanggal_dibuat', updatedAt: 'tanggal_diperbarui' } });
-// Pakai nama collection 'tasks'
-const Tugas = mongoose.model('Tugas', TugasSchema, 'tasks');
+// --- ROUTES ---
 
-
-// ==========================================
-// 2. API ROUTES (JALUR AKSES DATA)
-// ==========================================
-
-app.get('/', (req, res) => res.send('Student Task Manager API is Running!'));
-
-// --- ROUTES PENGGUNA ---
-app.post('/api/users', async (req, res) => {
-    try {
-        const user = new Pengguna(req.body);
-        await user.save();
-        res.status(201).json(user);
-    } catch (err) { res.status(400).json({ error: err.message }); }
-});
-
+// PENTING: Panggil connectDB() di DALAM setiap route
 app.get('/api/users', async (req, res) => {
-    const users = await Pengguna.find({ dihapus_pada: null });
+  try {
+    await connectDB(); // Tunggu connect dulu!
+    const users = await User.find();
     res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// --- ROUTES MATA KULIAH ---
-app.post('/api/courses', async (req, res) => {
-    try {
-        const course = new MataKuliah(req.body);
-        await course.save();
-        res.status(201).json(course);
-    } catch (err) { res.status(400).json({ error: err.message }); }
-});
-
-app.get('/api/courses', async (req, res) => {
-    const courses = await MataKuliah.find({ dihapus_pada: null });
-    res.json(courses);
-});
-
-// --- ROUTES TUGAS (INTI APLIKASI) ---
-
-// 1. GET: Ambil Semua Tugas
 app.get('/api/tasks', async (req, res) => {
-    try {
-        const tasks = await Tugas.find({ dihapus_pada: null })
-            .populate('id_pengguna', 'nama_lengkap nim')
-            .populate('id_mata_kuliah', 'nama_mata_kuliah dosen_pengampu');
-        res.json(tasks);
-    } catch (err) { res.status(500).json({ error: err.message }); }
+  try {
+    await connectDB(); // Tunggu connect dulu!
+    const tasks = await Task.find();
+    res.json(tasks);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// 2. POST: Buat Tugas Baru
 app.post('/api/tasks', async (req, res) => {
-    try {
-        const task = new Tugas(req.body);
-        await task.save();
-        res.status(201).json(task);
-    } catch (err) { res.status(400).json({ error: err.message }); }
+  try {
+    await connectDB(); // Tunggu connect dulu!
+    const newTask = new Task(req.body);
+    await newTask.save();
+    res.status(201).json(newTask);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// 3. DELETE: Soft Delete Tugas
-app.delete('/api/tasks/:id', async (req, res) => {
-    try {
-        await Tugas.findByIdAndUpdate(req.params.id, { dihapus_pada: new Date() });
-        res.json({ message: 'Tugas berhasil dihapus' });
-    } catch (err) { res.status(400).json({ error: err.message }); }
+// Route utama untuk cek server nyala
+app.get('/', (req, res) => {
+  res.send('Server Student Task Manager is Running!');
 });
 
-// PENTING UNTUK VERCEL
+// Export app untuk Vercel
 module.exports = app;
 
-// PENTING UNTUK LOKAL (Laptop)
-const PORT = 3000;
-app.listen(PORT, () => {
-    console.log(`✅ Server BERHASIL jalan di http://localhost:${PORT}`);
-});
+// Listen hanya untuk local (Vercel tidak butuh ini, tapi aman dibiarkan)
+if (require.main === module) {
+  app.listen(3000, () => console.log('Server running on port 3000'));
+}
