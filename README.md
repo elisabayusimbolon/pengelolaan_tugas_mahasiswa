@@ -16,8 +16,8 @@ Membantu mengelola jadwal kuliah, daftar tugas, serta memantau deadline dengan a
 
 | Nama               | NPM      |
 |--------------------|----------|
-| [Nama Developer 1] | [NPM]    |
-| [Nama Developer 2] | [NPM]    |
+| [Elisa Bayu Simbolon] | [23421160]    |
+| [Rayna Putri Iqrima Tandjung] | [23421178]    |
 | Nicholas Saputra   | 23421018 |
 
 ---
