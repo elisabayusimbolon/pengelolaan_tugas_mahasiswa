@@ -77,13 +77,13 @@ Aplikasi dibangun dengan pendekatan Fullstack JavaScript tanpa framework fronten
 - Modern UI: Desain bersih dengan animasi transisi halus  
 
 ---
-
+````
  ⚙️ Cara Instalasi & Menjalankan
 
  1️⃣ Clone Repository
 ```bash
 git clone [URL_REPOSITORY]
-````
+```
 
  2️⃣ Instal Dependensi
 
