@@ -14,17 +14,17 @@ Membantu mengelola jadwal kuliah, daftar tugas, serta memantau deadline dengan a
 
  👥 Tim Pengembang
 
-| Nama | NPM | Peran |
-|------|-----|-------|
-| [Nama Developer 1] | [NPM] | [Frontend / Backend / Fullstack] |
-| [Nama Developer 2] | [NPM] | [Frontend / Backend / Fullstack] |
-| [Nama Developer 3] | [NPM] | [Frontend / Backend / Fullstack] |
+| Nama               | NPM      |
+|--------------------|----------|
+| [Nama Developer 1] | [NPM]    |
+| [Nama Developer 2] | [NPM]    |
+| Nicholas Saputra   | 23421018 |
 
 ---
 
  🧠 Tentang Proyek
 
-Proyek ini dikembangkan sebagai pemenuhan tugas Pemrograman Web Lanjut.  
+Proyek ini dikembangkan sebagai pemenuhan project UAS Rekayasa Perangkat Lunak Lanjut.  
 Fokus utama pengembangan meliputi:
 
 - Implementasi CRUD (Create, Read, Update, Delete secara lengkap  
@@ -38,14 +38,14 @@ Aplikasi dibangun dengan pendekatan Fullstack JavaScript tanpa framework fronten
 
  🧩 Arsitektur Teknologi
 
-| Komponen | Teknologi | Penjelasan |
-|---------|-----------|------------|
-| Bahasa Pemrograman | JavaScript (ES6+) | Fullstack JavaScript. Frontend dan Backend sama-sama menggunakan JS sehingga pertukaran data JSON lebih konsisten. |
-| Frontend | HTML5, CSS3, Vanilla JS | Tanpa framework (React/Vue). Manipulasi DOM manual untuk pemahaman fundamental web. |
-| Backend | Node.js, Express.js | Server REST API dengan Express sebagai router dan handler HTTP request. |
-| Database | MongoDB (NoSQL) | Penyimpanan berbasis dokumen (JSON) yang fleksibel. |
-| ODM / Library | Mongoose | Validasi data dan skema sebelum data masuk ke MongoDB. |
-| Arsitektur API | RESTful API | Menggunakan metode standar: GET, POST, PUT, DELETE dengan format JSON. |
+| Komponen           | Teknologi               | Penjelasan                                                                                                         |
+|--------------------|-------------------------|--------------------------------------------------------------------------------------------------------------------|
+| Bahasa Pemrograman | JavaScript (ES6+)       | Fullstack JavaScript. Frontend dan Backend sama-sama menggunakan JS sehingga pertukaran data JSON lebih konsisten. |
+| Frontend           | HTML5, CSS3, Vanilla JS | Tanpa framework (React/Vue). Manipulasi DOM manual untuk pemahaman fundamental web.                                |
+| Backend            | Node.js, Express.js     | Server REST API dengan Express sebagai router dan handler  HTTP request.                                           |
+| Database           | MongoDB (NoSQL)         | Penyimpanan berbasis dokumen (JSON) yang fleksibel.                                                                |
+| ODM / Library      | Mongoose                | Validasi data dan skema sebelum data masuk ke MongoDB.                                                             |
+| Arsitektur API     | RESTful API             | Menggunakan metode standar: GET, POST, PUT, DELETE dengan format JSON.                                             |
 
 ---
 
